@@ -496,6 +496,7 @@ def ensure_release_notes(repo_name, version, conn):
 # ─── API Routes ──────────────────────────────────────────────────────────────
 
 @app.route('/')
+@app.route('/diff')
 def index():
     return render_template('index.html')
 
@@ -731,12 +732,10 @@ def api_fetch_version(repo_name):
 # ─── Upgrade Advisor ─────────────────────────────────────────────────────────
 
 def flatten_yaml(obj, prefix='', result=None):
-    """Flatten nested YAML into dot-path keys."""
     if result is None:
         result = {}
     if obj is None:
-        if prefix:
-            result[prefix] = None
+        if prefix: result[prefix] = None
         return result
     if not isinstance(obj, dict):
         result[prefix] = obj
@@ -752,57 +751,109 @@ def flatten_yaml(obj, prefix='', result=None):
     return result
 
 
-def build_advisor_report(user_flat, from_flat, to_flat):
+def find_rename_candidates(missing_key, target_keys):
     """
-    Compare user's values against upstream from→to.
-    - breaking:       key user sets that was REMOVED in target upstream
-    - default_shifts: key user sets whose upstream default CHANGED
-    - new_features:   key NEW in target upstream (user doesn't have it yet)
+    Match a removed key to possible renamed keys by matching from the tail of the dot-path.
+    e.g. 'istio.enabled' removed, 'defaults.istio.enabled' added -> high confidence rename
+    """
+    parts = missing_key.split('.')
+    best = None
+    best_tail = 0
+
+    for tail_len in range(len(parts), 0, -1):
+        tail = '.'.join(parts[-tail_len:])
+        matches = [k for k in target_keys if k.endswith(tail) and k != missing_key]
+
+        if len(matches) == 1:
+            return {
+                'key': matches[0],
+                'confidence': 'high',
+                'tail_length': tail_len,
+                'tail': tail,
+            }
+        if 0 < len(matches) <= 3 and tail_len > best_tail:
+            best = {
+                'key': matches[0],
+                'confidence': 'medium',
+                'tail_length': tail_len,
+                'tail': tail,
+                'alternatives': matches,
+            }
+            best_tail = tail_len
+
+    return best
+
+
+def build_values_diff_report(from_flat, to_flat):
+    """
+    Compare two flattened values.yaml dicts and classify all changes.
+    Returns structured report with renamed, removed, added, changed.
     """
     from_keys = set(from_flat.keys())
     to_keys   = set(to_flat.keys())
-    user_keys = set(user_flat.keys())
 
-    removed_upstream = from_keys - to_keys
-    added_upstream   = to_keys - from_keys
-    common           = from_keys & to_keys
+    removed_raw = from_keys - to_keys
+    added_raw   = to_keys - from_keys
+    common      = from_keys & to_keys
 
-    breaking       = []
-    default_shifts = []
-    new_features   = []
+    renamed    = []  # key moved/restructured
+    removed    = []  # truly gone
+    added      = []  # truly new
+    changed    = []  # same key, different default
 
-    # Keys user has that got removed in the new upstream
-    for key in sorted(removed_upstream):
-        if key in user_keys:
-            breaking.append({
+    # Pass 1: find renames among removed keys
+    rename_targets = set()  # added keys that are rename destinations
+    for key in sorted(removed_raw):
+        candidate = find_rename_candidates(key, added_raw)
+        if candidate and candidate['confidence'] == 'high':
+            renamed.append({
+                'old_key': key,
+                'new_key': candidate['key'],
+                'old_default': str(from_flat[key]) if from_flat[key] is not None else 'null',
+                'new_default': str(to_flat[candidate['key']]) if to_flat.get(candidate['key']) is not None else 'null',
+                'confidence': 'high',
+            })
+            rename_targets.add(candidate['key'])
+        elif candidate and candidate['confidence'] == 'medium':
+            renamed.append({
+                'old_key': key,
+                'new_key': candidate['key'],
+                'old_default': str(from_flat[key]) if from_flat[key] is not None else 'null',
+                'new_default': str(to_flat.get(candidate['key'], '')) ,
+                'confidence': 'medium',
+                'alternatives': candidate.get('alternatives', []),
+            })
+            rename_targets.add(candidate['key'])
+        else:
+            removed.append({
                 'key': key,
-                'user_value': str(user_flat[key]),
                 'old_default': str(from_flat[key]) if from_flat[key] is not None else 'null',
             })
 
-    # Keys user has where upstream default changed
+    # Pass 2: added keys that aren't rename destinations
+    for key in sorted(added_raw):
+        if key not in rename_targets:
+            added.append({
+                'key': key,
+                'new_default': str(to_flat[key]) if to_flat[key] is not None else 'null',
+            })
+
+    # Pass 3: changed defaults on common keys
     for key in sorted(common):
         old_val = from_flat[key]
         new_val = to_flat[key]
-        if str(old_val) != str(new_val) and key in user_keys:
-            default_shifts.append({
+        if str(old_val) != str(new_val):
+            changed.append({
                 'key': key,
-                'user_value': str(user_flat[key]),
                 'old_default': str(old_val) if old_val is not None else 'null',
                 'new_default': str(new_val) if new_val is not None else 'null',
             })
 
-    # Keys new in target upstream
-    for key in sorted(added_upstream):
-        new_features.append({
-            'key': key,
-            'default_value': str(to_flat[key]) if to_flat[key] is not None else 'null',
-        })
-
     return {
-        'breaking':       breaking,
-        'default_shifts': default_shifts,
-        'new_features':   new_features,
+        'renamed': renamed,
+        'removed': removed,
+        'added':   added,
+        'changed': changed,
     }
 
 
@@ -813,11 +864,10 @@ def advisor_page():
 
 @app.route('/api/advisor/analyze', methods=['POST'])
 def api_advisor_analyze():
-    data = request.json or {}
+    data         = request.json or {}
     repo_name    = data.get('repo', '').strip()
     from_version = data.get('from', '').strip()
     to_version   = data.get('to', '').strip()
-    user_yaml    = data.get('user_values', '').strip()
 
     if not repo_name or not from_version or not to_version:
         return jsonify({'error': 'repo, from, and to are required'}), 400
@@ -837,11 +887,10 @@ def api_advisor_analyze():
     to_content   = get_values(to_version)
 
     if not from_content:
-        return jsonify({'error': f'values.yaml not cached for {from_version} — run Compare first to cache it'}), 404
+        return jsonify({'error': f'values.yaml not cached for {repo_name}@{from_version} — run a Compare on the Diff page first'}), 404
     if not to_content:
-        return jsonify({'error': f'values.yaml not cached for {to_version} — run Compare first to cache it'}), 404
+        return jsonify({'error': f'values.yaml not cached for {repo_name}@{to_version} — run a Compare on the Diff page first'}), 404
 
-    # Parse all three YAMLs
     try:
         from_parsed = yaml.safe_load(from_content) or {}
     except Exception as e:
@@ -851,24 +900,18 @@ def api_advisor_analyze():
     except Exception as e:
         return jsonify({'error': f'Failed to parse to values.yaml: {e}'}), 500
 
-    user_parsed = {}
-    if user_yaml:
-        try:
-            user_parsed = yaml.safe_load(user_yaml) or {}
-        except Exception as e:
-            return jsonify({'error': f'Failed to parse your values.yaml: {e}'}), 400
-
     from_flat = flatten_yaml(from_parsed)
     to_flat   = flatten_yaml(to_parsed)
-    user_flat = flatten_yaml(user_parsed)
+    report    = build_values_diff_report(from_flat, to_flat)
 
-    report = build_advisor_report(user_flat, from_flat, to_flat)
     report['from_version'] = from_version
     report['to_version']   = to_version
     report['repo']         = repo_name
-    report['has_user_values'] = bool(user_yaml)
+    report['total_keys_from'] = len(from_flat)
+    report['total_keys_to']   = len(to_flat)
 
     return jsonify(report)
+
 
 # ─── Startup ─────────────────────────────────────────────────────────────────
 
