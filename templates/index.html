@@ -10,121 +10,123 @@
 :root {
   --bg:#0d0f12; --s1:#13161c; --s2:#191c24; --s3:#1f232e;
   --border:#272b38; --border2:#30354a;
-  --text:#d4d8e8; --text2:#7b82a0; --text3:#454a62;
+  --text:#d4d8e8; --text2:#9298b0; --text3:#454a62;
   --accent:#4f8ef7; --green:#34d399; --red:#f87171; --yellow:#fbbf24;
-  --add-bg:rgba(52,211,153,.06); --del-bg:rgba(248,113,113,.06);
+  --add-bg:rgba(52,211,153,.07); --del-bg:rgba(248,113,113,.07);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
-/* TOPBAR */
-.topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0}
-.logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.5px;display:flex;align-items:center;gap:8px;margin-right:4px}
+/* ── TOPBAR ── */
+.topbar{height:54px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;flex-wrap:nowrap}
+.logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.5px;display:flex;align-items:center;gap:6px;flex-shrink:0}
 .logo-dot{color:var(--accent)}
-.vdivider{width:1px;height:24px;background:var(--border);flex-shrink:0}
-.field{display:flex;align-items:center;gap:8px}
-.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
-select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 28px 6px 10px;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border-color .15s;min-width:160px}
+.vd{width:1px;height:24px;background:var(--border);flex-shrink:0;margin:0 4px}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;flex-shrink:0}
+
+select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 28px 7px 11px;border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border-color .15s;flex-shrink:0}
 select:focus{outline:none;border-color:var(--accent)}
 select:hover{border-color:var(--border2)}
-.v-old{border-color:rgba(248,113,113,.35)!important}
+#repoSel{min-width:170px}
+.v-old{border-color:rgba(248,113,113,.4)!important;min-width:155px}
 .v-old:focus{border-color:var(--red)!important}
-.v-new{border-color:rgba(52,211,153,.35)!important}
+.v-new{border-color:rgba(52,211,153,.4)!important;min-width:175px}
 .v-new:focus{border-color:var(--green)!important}
-.arrow-icon{color:var(--text3);font-size:18px;flex-shrink:0}
-.ml-auto{margin-left:auto}
-.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--text2);font-size:12px;font-family:'IBM Plex Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.arr{color:var(--text3);font-size:20px;flex-shrink:0;line-height:1}
+
+.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--text2);font-size:12px;font-family:'IBM Plex Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .btn:hover{background:var(--s3);color:var(--text);border-color:var(--border2)}
-.btn-cmp{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important;font-weight:600!important}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn-cmp{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important;font-weight:600!important;padding:7px 20px!important}
 .btn-cmp:hover{background:#6ba0ff!important;border-color:#6ba0ff!important}
-.btn:disabled{opacity:.4;pointer-events:none}
+.ml{margin-left:auto}
 
-/* STATS BAR */
-.statsbar{height:32px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:18px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2)}
-.stat{display:flex;align-items:center;gap:5px}
-.stat-val{color:var(--text)}
-.stat-val.g{color:var(--green)}
-.stat-val.r{color:var(--red)}
-.stat-val.y{color:var(--yellow)}
-.dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+/* ── STATS BAR ── */
+.statsbar{height:33px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2)}
+.stat{display:flex;align-items:center;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
+.gv{color:var(--green);font-weight:600}
+.rv{color:var(--red);font-weight:600}
+.yv{color:var(--yellow);font-weight:600}
+.wv{color:var(--text);font-weight:600}
 
-/* FILE TABS */
-.filetabs{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:6px 20px 0;gap:4px;flex-shrink:0;overflow-x:auto;min-height:42px}
-.filetabs::-webkit-scrollbar{height:3px}
-.filetabs::-webkit-scrollbar-thumb{background:var(--border2)}
-.ftab{padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2);cursor:pointer;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:7px;position:relative;bottom:-1px;background:var(--s2)}
-.ftab:hover{color:var(--text);background:var(--s3);border-color:var(--border2)}
-.ftab.active{color:#fff;background:var(--s3);border-color:var(--border2);border-bottom-color:var(--s3)}
-.ftab-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.ftab-dot.modified{background:var(--accent)}
-.ftab-dot.added{background:var(--green)}
-.ftab-dot.removed{background:var(--red)}
-.ftab-dot.unchanged{background:var(--text3)}
+/* ── FILE TABS ── */
+.filetabs{background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:10px 16px;gap:6px;flex-shrink:0;overflow-x:auto;min-height:54px}
+.filetabs::-webkit-scrollbar{height:4px}
+.filetabs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.ftab{padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:400;color:var(--text2);cursor:pointer;border-radius:7px;border:1px solid var(--border);white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:8px;background:var(--s1);flex-shrink:0}
+.ftab:hover{color:var(--text);border-color:var(--border2);background:var(--s3)}
+.ftab.active{color:#fff;background:var(--accent);border-color:var(--accent)}
+.ftab.active .fdot{background:#fff!important}
+.fdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.fdot.modified{background:var(--accent)}
+.fdot.added{background:var(--green)}
+.fdot.removed{background:var(--red)}
+.fdot.unchanged{background:var(--text3)}
 
-/* WORKSPACE */
+/* ── WORKSPACE ── */
 .workspace{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
-/* SIDE BY SIDE */
+/* ── SIDE BY SIDE ── */
 .diff-pane{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;min-height:0}
 .diff-side{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
 .diff-side:last-child{border-right:none}
-.diff-side-header{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.sv-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
-.sv-ver{font-weight:700;font-size:14px}
+.diff-side-hdr{padding:10px 18px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.sv-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
+.sv-ver{font-weight:700;font-size:15px}
 .sv-ver.old{color:var(--red)}
 .sv-ver.new{color:var(--green)}
-.sv-changes{margin-left:auto;font-size:11px}
-.diff-code{flex:1;overflow-y:auto;overflow-x:auto}
+.sv-chg{margin-left:auto;font-size:12px;font-family:'IBM Plex Mono',monospace}
+.diff-code{flex:1;overflow:auto}
 .diff-code::-webkit-scrollbar{width:5px;height:5px}
 .diff-code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
 table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.6}
 .ct td{padding:1px 0;vertical-align:top;white-space:pre}
-.ct .ln{color:var(--text2);text-align:right;min-width:52px;padding-right:12px;padding-left:8px;user-select:none;border-right:1px solid var(--border)}
+.ct .ln{color:var(--text2);text-align:right;min-width:52px;padding-right:14px;padding-left:10px;user-select:none;border-right:1px solid var(--border);font-size:12px}
 .ct .code{padding-left:14px;padding-right:16px;color:#c8cde0}
 .ct tr.add{background:var(--add-bg)}
-.ct tr.add .ln{color:var(--green);border-right-color:rgba(52,211,153,.2)}
+.ct tr.add .ln{color:var(--green);border-right-color:rgba(52,211,153,.25)}
 .ct tr.add .code{color:#86efcd}
 .ct tr.del{background:var(--del-bg)}
-.ct tr.del .ln{color:var(--red);border-right-color:rgba(248,113,113,.2)}
+.ct tr.del .ln{color:var(--red);border-right-color:rgba(248,113,113,.25)}
 .ct tr.del .code{color:#fbb3b3}
 .ct tr.hunk .code{color:var(--accent);background:rgba(79,142,247,.05)}
 .ct tr.hunk .ln{color:var(--accent)}
-.ct tr.ctx .code{color:#c8cde0}
 
-/* NEW VALUES PANEL */
-.nv-panel{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;display:flex;flex-direction:column;max-height:200px}
-.nv-header{padding:9px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;flex-shrink:0}
-.nv-title{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.07em}
-.nv-badge{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 7px;border-radius:3px}
+/* ── NEW VALUES PANEL ── */
+.nv-panel{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;display:flex;flex-direction:column;max-height:210px}
+.nv-hdr{padding:10px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;flex-shrink:0}
+.nv-title{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.07em}
+.nv-badge{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.22);color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 8px;border-radius:4px}
 .nv-desc{font-size:11px;color:var(--text3);margin-left:auto}
 .nv-body{overflow-y:auto;padding:12px 20px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
 .nv-body::-webkit-scrollbar{width:4px}
 .nv-body::-webkit-scrollbar-thumb{background:var(--border2)}
-.nv-chip{background:var(--s2);border:1px solid rgba(52,211,153,.18);border-radius:5px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;flex-direction:column;gap:3px;max-width:260px;transition:border-color .15s;cursor:default}
+.nv-chip{background:var(--s2);border:1px solid rgba(52,211,153,.18);border-radius:6px;padding:7px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;display:flex;flex-direction:column;gap:3px;max-width:280px;cursor:default;transition:border-color .15s}
 .nv-chip:hover{border-color:rgba(52,211,153,.45)}
 .nv-key{color:var(--green);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-val{color:var(--text3);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-val{color:var(--text3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* EMPTY & LOADING */
+/* ── EMPTY / LOADING ── */
 .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text3)}
-.empty-icon{font-size:38px;opacity:.25}
-.empty h2{font-size:16px;font-weight:500;color:var(--text2)}
-.empty p{font-size:13px;text-align:center;max-width:300px;line-height:1.7;color:var(--text2)}
-.empty-steps{display:flex;flex-direction:column;gap:6px;text-align:left;margin-top:4px}
-.empty-steps li{display:flex;align-items:center;gap:8px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text2);list-style:none}
-.step-n{width:18px;height:18px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0}
-.loading-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
-.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+.empty-icon{font-size:40px;opacity:.2}
+.empty h2{font-size:17px;font-weight:500;color:var(--text2)}
+.empty p{font-size:13px;color:var(--text2);text-align:center;max-width:320px;line-height:1.7}
+.empty-steps{display:flex;flex-direction:column;gap:7px;text-align:left;margin-top:4px}
+.empty-steps li{display:flex;align-items:center;gap:9px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--text2);list-style:none}
+.sn{width:20px;height:20px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);flex-shrink:0}
+.loading-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:13px}
+.spin{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* TOAST */
+/* ── TOAST ── */
 #toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text);box-shadow:0 4px 24px rgba(0,0,0,.5);transform:translateY(60px);opacity:0;transition:all .25s ease;z-index:1000}
 #toast.show{transform:translateY(0);opacity:1}
 #toast.ok{border-color:rgba(52,211,153,.4);color:var(--green)}
 #toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
 
-/* MODAL */
+/* ── MODAL ── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
 .overlay.open{opacity:1;pointer-events:all}
 .modal{background:var(--s1);border:1px solid var(--border2);border-radius:10px;width:460px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.96);transition:transform .2s}
@@ -132,7 +134,7 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
 .modal-title{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;margin-bottom:20px;color:var(--text)}
 .fg{margin-bottom:13px}
 .flabel{display:block;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
-.finput{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 11px;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:border-color .15s}
+.finput{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;transition:border-color .15s}
 .finput:focus{outline:none;border-color:var(--accent)}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 
@@ -143,26 +145,26 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
 </head>
 <body>
 
+<!-- TOPBAR -->
 <div class="topbar">
   <div class="logo">⎈ skew<span class="logo-dot">.</span>log</div>
-  <div class="vdivider"></div>
-  <div class="field">
-    <span class="field-label">chart</span>
-    <select id="repoSel" onchange="onRepoChange()">
-      <option value="">— select —</option>
-    </select>
-  </div>
-  <div class="vdivider"></div>
-  <div class="field">
-    <select class="v-old" id="fromSel" disabled onchange="checkReady()">
-      <option value="">current version</option>
-    </select>
-    <span class="arrow-icon">→</span>
-    <select class="v-new" id="toSel" disabled onchange="checkReady()">
-      <option value="">target version</option>
-    </select>
-  </div>
-  <div class="ml-auto" style="display:flex;gap:8px;align-items:center">
+  <div class="vd"></div>
+  <span class="field-label">chart</span>
+  <select id="repoSel" onchange="onRepoChange()">
+    <option value="">— select —</option>
+  </select>
+  <div class="vd"></div>
+  <!-- Version pair + Compare all together -->
+  <select class="v-old" id="fromSel" disabled>
+    <option value="">current version</option>
+  </select>
+  <span class="arr">→</span>
+  <select class="v-new" id="toSel" disabled onchange="onToChange()">
+    <option value="">target version</option>
+  </select>
+  <button class="btn btn-cmp" id="compareBtn" onclick="runCompare()" disabled>Compare</button>
+  <!-- Utility buttons pushed right -->
+  <div class="ml" style="display:flex;gap:8px">
     <button class="btn" onclick="syncRepo()">
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Sync
@@ -171,35 +173,37 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Add Chart
     </button>
-    <button class="btn btn-cmp" id="compareBtn" onclick="runCompare()" disabled>Compare</button>
   </div>
 </div>
 
+<!-- STATS BAR -->
 <div class="statsbar">
   <div class="stat"><div class="dot"></div><span id="statusTxt">ready</span></div>
-  <div class="stat" id="sFiles" style="display:none"><span class="stat-val" id="sFilesV">—</span><span>files changed</span></div>
-  <div class="stat" id="sAdd"   style="display:none"><span class="stat-val g" id="sAddV">—</span><span>additions</span></div>
-  <div class="stat" id="sDel"   style="display:none"><span class="stat-val r" id="sDelV">—</span><span>deletions</span></div>
-  <div class="stat" id="sNew"   style="display:none"><span class="stat-val g" id="sNewV">—</span><span>new keys in values.yaml</span></div>
-  <div class="stat" id="sBrk"   style="display:none"><span class="stat-val y" id="sBrkV">—</span><span>versions with breaking changes</span></div>
+  <div class="stat" id="sFiles" style="display:none"><span class="wv" id="sFilesV">—</span> files changed</div>
+  <div class="stat" id="sAdd"   style="display:none"><span class="gv" id="sAddV">—</span> additions</div>
+  <div class="stat" id="sDel"   style="display:none"><span class="rv" id="sDelV">—</span> deletions</div>
+  <div class="stat" id="sNew"   style="display:none"><span class="gv" id="sNewV">—</span> new keys in values.yaml</div>
+  <div class="stat" id="sBrk"   style="display:none"><span class="yv" id="sBrkV">—</span> versions with breaking changes</div>
 </div>
 
+<!-- FILE TABS -->
 <div class="filetabs" id="filetabs" style="display:none"></div>
 
+<!-- WORKSPACE -->
 <div class="workspace" id="workspace">
   <div class="empty">
     <div class="empty-icon">⎈</div>
     <h2>skewlog</h2>
-    <p>Before you upgrade, check the skew. Select a chart, set versions, compare.</p>
+    <p>Before you upgrade, check the skew.</p>
     <ul class="empty-steps">
-      <li><div class="step-n">1</div>Choose a chart from the dropdown</li>
-      <li><div class="step-n">2</div>Set your current version <span style="color:var(--red)">←</span></li>
-      <li><div class="step-n">3</div>Set your target version <span style="color:var(--green)">→</span></li>
-      <li><div class="step-n">4</div>Hit Compare</li>
+      <li><div class="sn">1</div>Choose a chart — target defaults to latest</li>
+      <li><div class="sn">2</div>Current version auto-sets to one below target</li>
+      <li><div class="sn">3</div>Adjust either, then hit Compare</li>
     </ul>
   </div>
 </div>
 
+<!-- ADD CHART MODAL -->
 <div class="overlay" id="modal">
   <div class="modal">
     <div class="modal-title">Add Helm Chart</div>
@@ -220,7 +224,7 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
 const S = { repo:null, versions:[], latest:null, diffData:null, currentFile:null, newKeys:[] };
 
 async function boot() {
-  const repos = await fetch('/api/repos').then(r=>r.json());
+  const repos = await fetch('/api/repos').then(r => r.json());
   const sel = document.getElementById('repoSel');
   repos.forEach(r => {
     const o = document.createElement('option');
@@ -229,6 +233,7 @@ async function boot() {
   });
 }
 
+// ── Repo change ──────────────────────────────────────────────────────────
 async function onRepoChange() {
   const name = document.getElementById('repoSel').value;
   if (!name) return;
@@ -236,37 +241,80 @@ async function onRepoChange() {
   setStatus('loading versions…');
   resetSels();
 
-  const d = await fetch(`/api/repos/${name}/versions`).then(r=>r.json());
+  const d = await fetch(`/api/repos/${name}/versions`).then(r => r.json());
   if (d.error) { setStatus('error: ' + d.error); return; }
+
   S.versions = d.versions || [];
   S.latest = d.latest;
   fillSels();
   setStatus('ready');
 }
 
+// ── Fill version selectors ────────────────────────────────────────────────
 function fillSels() {
-  const f = document.getElementById('fromSel');
-  const t = document.getElementById('toSel');
-  f.innerHTML = '<option value="">— current version —</option>';
-  t.innerHTML = '<option value="">— target version —</option>';
+  const fromSel = document.getElementById('fromSel');
+  const toSel   = document.getElementById('toSel');
+
+  fromSel.innerHTML = '<option value="">— current version —</option>';
+  toSel.innerHTML   = '<option value="">— target version —</option>';
+
   S.versions.forEach(v => {
     const isLatest = v.version === S.latest;
-    const label = (isLatest ? v.version + ' (latest)' : v.version) + (v.has_breaking_changes ? ' ⚠' : '');
-    [f,t].forEach(sel => {
-      const o = document.createElement('option');
-      o.value = v.version; o.textContent = label;
-      sel.appendChild(o);
-    });
+    const brk = v.has_breaking_changes ? ' ⚠' : '';
+
+    // RIGHT (target): all versions
+    const oTo = document.createElement('option');
+    oTo.value = v.version;
+    oTo.textContent = (isLatest ? v.version + ' (latest)' : v.version) + brk;
+    toSel.appendChild(oTo);
+
+    // LEFT (from): never include latest
+    if (!isLatest) {
+      const oFrom = document.createElement('option');
+      oFrom.value = v.version;
+      oFrom.textContent = v.version + brk;
+      fromSel.appendChild(oFrom);
+    }
   });
-  if (S.latest) t.value = S.latest;
-  f.disabled = false; t.disabled = false;
+
+  // Default target = latest
+  if (S.latest) {
+    toSel.value = S.latest;
+    autoSetFrom(S.latest);
+  }
+
+  fromSel.disabled = false;
+  toSel.disabled = false;
+  checkReady();
+}
+
+// Set fromSel to the version just before the selected target
+function autoSetFrom(targetVersion) {
+  const fromSel = document.getElementById('fromSel');
+  const idx = S.versions.findIndex(v => v.version === targetVersion);
+  if (idx >= 0 && idx + 1 < S.versions.length) {
+    // versions are sorted newest-first, so idx+1 is one version older
+    const prev = S.versions[idx + 1];
+    if (prev && prev.version !== S.latest) {
+      fromSel.value = prev.version;
+    } else if (prev) {
+      // Edge case: pick idx+2 if idx+1 is latest (shouldn't happen but safe)
+      const next = S.versions[idx + 2];
+      if (next) fromSel.value = next.version;
+    }
+  }
+}
+
+function onToChange() {
+  const target = document.getElementById('toSel').value;
+  if (target) autoSetFrom(target);
   checkReady();
 }
 
 function resetSels() {
-  ['fromSel','toSel'].forEach(id => {
+  ['fromSel','toSel'].forEach((id, i) => {
     const el = document.getElementById(id);
-    el.innerHTML = `<option value="">${id==='fromSel'?'— current version —':'— target version —'}</option>`;
+    el.innerHTML = `<option value="">${i === 0 ? '— current version —' : '— target version —'}</option>`;
     el.disabled = true;
   });
   document.getElementById('compareBtn').disabled = true;
@@ -278,6 +326,7 @@ function checkReady() {
   document.getElementById('compareBtn').disabled = !(f && t && f !== t);
 }
 
+// ── Compare ───────────────────────────────────────────────────────────────
 async function runCompare() {
   const from = document.getElementById('fromSel').value;
   const to   = document.getElementById('toSel').value;
@@ -293,7 +342,7 @@ async function runCompare() {
   checkReady();
 
   if (!res.ok) {
-    const e = await res.json().catch(()=>({}));
+    const e = await res.json().catch(() => ({}));
     toast(e.error || 'Compare failed', 'err');
     setStatus('error'); showEmpty(); return;
   }
@@ -303,27 +352,30 @@ async function runCompare() {
   renderAll();
 }
 
+// ── Render ────────────────────────────────────────────────────────────────
 function renderAll() {
   const d = S.diffData;
   const changed = d.diff.filter(f => f.status !== 'unchanged');
-  sv('sFiles','sFilesV', changed.length);
-  sv('sAdd','sAddV', '+' + d.total_additions);
-  sv('sDel','sDelV', '-' + d.total_deletions);
+  sv('sFiles', 'sFilesV', changed.length);
+  sv('sAdd',   'sAddV',   '+' + d.total_additions);
+  sv('sDel',   'sDelV',   '-' + d.total_deletions);
 
   S.newKeys = computeNewKeys(d);
-  sv('sNew','sNewV', S.newKeys.length);
+  sv('sNew', 'sNewV', S.newKeys.length);
 
-  const brk = (d.versions_between||[]).filter(v=>v.has_breaking_changes).length;
-  if (brk) sv('sBrk','sBrkV', '⚠ ' + brk);
+  const brk = (d.versions_between || []).filter(v => v.has_breaking_changes).length;
+  if (brk) sv('sBrk', 'sBrkV', '⚠ ' + brk);
+  else document.getElementById('sBrk').style.display = 'none';
 
   setStatus(`${d.from_version}  →  ${d.to_version}`);
 
-  const sorted = [...d.diff].sort((a,b)=>{
-    const o={modified:0,added:1,removed:2,unchanged:3};
-    return (o[a.status]||3)-(o[b.status]||3);
+  const sorted = [...d.diff].sort((a, b) => {
+    const o = {modified:0,added:1,removed:2,unchanged:3};
+    return (o[a.status]||3) - (o[b.status]||3);
   });
+
   renderTabs(sorted);
-  const first = sorted.find(f=>f.status!=='unchanged') || sorted[0];
+  const first = sorted.find(f => f.status !== 'unchanged') || sorted[0];
   if (first) selectFile(first.filename);
 }
 
@@ -334,7 +386,8 @@ function renderTabs(files) {
     const t = document.createElement('div');
     t.className = 'ftab'; t.dataset.file = f.filename;
     t.onclick = () => selectFile(f.filename);
-    t.innerHTML = `<span class="ftab-dot ${f.status}"></span>${escHtml(shortName(f.filename))}`;
+    const short = shortName(f.filename);
+    t.innerHTML = `<span class="fdot ${f.status}"></span>${escHtml(short)}`;
     bar.appendChild(t);
   });
 }
@@ -348,29 +401,30 @@ function selectFile(filename) {
   if (fd) renderSBS(fd);
 }
 
+// ── Side-by-side diff ─────────────────────────────────────────────────────
 function renderSBS(fd) {
   const ws = document.getElementById('workspace');
   const { L, R } = splitDiff(fd);
   const from = S.diffData.from_version;
   const to   = S.diffData.to_version;
-  const lDel = L.filter(l=>l.t==='del').length;
-  const rAdd = R.filter(l=>l.t==='add').length;
+  const lDel = L.filter(l => l.t === 'del').length;
+  const rAdd = R.filter(l => l.t === 'add').length;
 
   ws.innerHTML = `
     <div class="diff-pane" id="diffPane">
       <div class="diff-side">
-        <div class="diff-side-header">
-          <span class="sv-label">from</span>
+        <div class="diff-side-hdr">
+          <span class="sv-lbl">from</span>
           <span class="sv-ver old">${escHtml(from)}</span>
-          <span class="sv-changes" style="color:var(--red)">${lDel?'-'+lDel:''}</span>
+          <span class="sv-chg" style="color:var(--red)">${lDel ? '-' + lDel : ''}</span>
         </div>
         <div class="diff-code" id="LC"><table class="ct"><tbody id="LB"></tbody></table></div>
       </div>
       <div class="diff-side">
-        <div class="diff-side-header">
-          <span class="sv-label">to</span>
+        <div class="diff-side-hdr">
+          <span class="sv-lbl">to</span>
           <span class="sv-ver new">${escHtml(to)}</span>
-          <span class="sv-changes" style="color:var(--green)">${rAdd?'+'+rAdd:''}</span>
+          <span class="sv-chg" style="color:var(--green)">${rAdd ? '+' + rAdd : ''}</span>
         </div>
         <div class="diff-code" id="RC"><table class="ct"><tbody id="RB"></tbody></table></div>
       </div>
@@ -383,10 +437,9 @@ function renderSBS(fd) {
   const lc = document.getElementById('LC');
   const rc = document.getElementById('RC');
   let lock = false;
-  lc.addEventListener('scroll', () => { if(!lock){lock=true;rc.scrollTop=lc.scrollTop;lock=false;} });
-  rc.addEventListener('scroll', () => { if(!lock){lock=true;lc.scrollTop=rc.scrollTop;lock=false;} });
+  lc.addEventListener('scroll', () => { if (!lock) { lock=true; rc.scrollTop=lc.scrollTop; rc.scrollLeft=lc.scrollLeft; lock=false; } });
+  rc.addEventListener('scroll', () => { if (!lock) { lock=true; lc.scrollTop=rc.scrollTop; lc.scrollLeft=rc.scrollLeft; lock=false; } });
 
-  // Attach new values panel
   document.getElementById('nvPanel')?.remove();
   if (S.newKeys.length) attachNVPanel();
 }
@@ -396,7 +449,7 @@ function fillTable(id, lines) {
   if (!tb) return;
   tb.innerHTML = lines.map(l => {
     const cls = l.t==='add'?'add':l.t==='del'?'del':l.t==='hunk'?'hunk':'ctx';
-    const ln = l.n !== null ? l.n : '';
+    const ln  = l.n !== null ? l.n : '';
     const pfx = l.t==='add'?'+':l.t==='del'?'-':l.t==='hunk'?'':' ';
     return `<tr class="${cls}"><td class="ln">${ln}</td><td class="code">${pfx} ${escHtml(l.tx)}</td></tr>`;
   }).join('');
@@ -405,119 +458,126 @@ function fillTable(id, lines) {
 function splitDiff(fd) {
   const lines = fd.diff || [];
   const L = [], R = [];
-  if (fd.status==='added') {
-    lines.filter(l=>!l.startsWith('+++')&&!l.startsWith('---')&&!l.startsWith('@@'))
-         .forEach((l,i)=>R.push({t:'add',n:i+1,tx:l.slice(1)}));
-    return {L,R};
+  if (fd.status === 'added') {
+    lines.filter(l => !l.startsWith('+++') && !l.startsWith('---') && !l.startsWith('@@'))
+         .forEach((l, i) => R.push({t:'add', n:i+1, tx:l.slice(1)}));
+    return {L, R};
   }
-  if (fd.status==='removed') {
-    lines.filter(l=>!l.startsWith('---')&&!l.startsWith('+++')&&!l.startsWith('@@'))
-         .forEach((l,i)=>L.push({t:'del',n:i+1,tx:l.slice(1)}));
-    return {L,R};
+  if (fd.status === 'removed') {
+    lines.filter(l => !l.startsWith('---') && !l.startsWith('+++') && !l.startsWith('@@'))
+         .forEach((l, i) => L.push({t:'del', n:i+1, tx:l.slice(1)}));
+    return {L, R};
   }
-  if (fd.status==='unchanged') {
-    lines.forEach((l,i)=>{L.push({t:'ctx',n:i+1,tx:l});R.push({t:'ctx',n:i+1,tx:l});});
-    return {L,R};
+  if (fd.status === 'unchanged') {
+    lines.forEach((l, i) => { L.push({t:'ctx',n:i+1,tx:l}); R.push({t:'ctx',n:i+1,tx:l}); });
+    return {L, R};
   }
-  let ln=0, rn=0;
+  let ln = 0, rn = 0;
   lines.forEach(line => {
-    if (line.startsWith('---')||line.startsWith('+++')) return;
+    if (line.startsWith('---') || line.startsWith('+++')) return;
     if (line.startsWith('@@')) {
-      const m=line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)/);
-      if(m){ln=parseInt(m[1])-1;rn=parseInt(m[2])-1;}
-      L.push({t:'hunk',n:null,tx:line}); R.push({t:'hunk',n:null,tx:line});
+      const m = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)/);
+      if (m) { ln = parseInt(m[1])-1; rn = parseInt(m[2])-1; }
+      L.push({t:'hunk', n:null, tx:line});
+      R.push({t:'hunk', n:null, tx:line});
       return;
     }
-    if (line.startsWith('+')) { rn++; R.push({t:'add',n:rn,tx:line.slice(1)}); }
-    else if (line.startsWith('-')) { ln++; L.push({t:'del',n:ln,tx:line.slice(1)}); }
-    else { ln++;rn++; const tx=line.slice(1); L.push({t:'ctx',n:ln,tx}); R.push({t:'ctx',n:rn,tx}); }
+    if (line.startsWith('+')) { rn++; R.push({t:'add', n:rn, tx:line.slice(1)}); }
+    else if (line.startsWith('-')) { ln++; L.push({t:'del', n:ln, tx:line.slice(1)}); }
+    else { ln++; rn++; const tx = line.slice(1); L.push({t:'ctx',n:ln,tx}); R.push({t:'ctx',n:rn,tx}); }
   });
-  return {L,R};
+  return {L, R};
 }
 
+// ── New keys in values.yaml ───────────────────────────────────────────────
 function computeNewKeys(d) {
-  const vf = d.diff.find(f=>f.filename==='values.yaml');
-  if (!vf || vf.status==='unchanged') return [];
-  const added   = (vf.diff||[]).filter(l=>l.startsWith('+')&&!l.startsWith('+++'));
-  const deleted = (vf.diff||[]).filter(l=>l.startsWith('-')&&!l.startsWith('---'));
-  const delKeys = new Set(deleted.map(l=>yamlKey(l.slice(1))).filter(Boolean));
+  const vf = d.diff.find(f => f.filename === 'values.yaml');
+  if (!vf || vf.status === 'unchanged') return [];
+  const added   = (vf.diff||[]).filter(l => l.startsWith('+') && !l.startsWith('+++'));
+  const deleted = (vf.diff||[]).filter(l => l.startsWith('-') && !l.startsWith('---'));
+  const delKeys = new Set(deleted.map(l => yamlKey(l.slice(1))).filter(Boolean));
   const seen = new Set(), result = [];
   added.forEach(line => {
     const k = yamlKey(line.slice(1));
     if (k && !delKeys.has(k) && !seen.has(k)) {
       seen.add(k);
-      result.push({key:k, val:yamlVal(line.slice(1))});
+      result.push({ key: k, val: yamlVal(line.slice(1)) });
     }
   });
   return result;
 }
 
-function yamlKey(l) { const m=l.match(/^\s*([\w.\-]+)\s*:/); return m?m[1].trim():null; }
-function yamlVal(l) { const m=l.match(/^\s*[\w.\-]+\s*:\s*(.+)/); if(!m)return''; const v=m[1].trim(); return v.length>60?v.slice(0,57)+'…':v; }
+function yamlKey(l) { const m = l.match(/^\s*([\w.\-]+)\s*:/); return m ? m[1].trim() : null; }
+function yamlVal(l) { const m = l.match(/^\s*[\w.\-]+\s*:\s*(.+)/); if (!m) return ''; const v = m[1].trim(); return v.length > 60 ? v.slice(0,57)+'…' : v; }
 
 function attachNVPanel() {
   const panel = document.createElement('div');
   panel.id = 'nvPanel'; panel.className = 'nv-panel';
   panel.innerHTML = `
-    <div class="nv-header" onclick="toggleNV()">
+    <div class="nv-hdr" onclick="toggleNV()">
       <span class="nv-title">✦ New in values.yaml</span>
       <span class="nv-badge">${S.newKeys.length} new keys</span>
-      <span class="nv-desc">Configs that didn't exist in the old version</span>
-      <svg id="nvChev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);margin-left:8px;transition:transform .2s"><path d="m6 9 6 6 6-6"/></svg>
+      <span class="nv-desc">Keys that didn't exist in the old version</span>
+      <svg id="nvChev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);margin-left:8px;transition:transform .2s"><path d="m6 9 6 6 6-6"/></svg>
     </div>
     <div class="nv-body" id="nvBody">
-      ${S.newKeys.map(k=>`
+      ${S.newKeys.map(k => `
         <div class="nv-chip" title="${escHtml(k.key)}: ${escHtml(k.val)}">
           <span class="nv-key">${escHtml(k.key)}</span>
-          ${k.val?`<span class="nv-val">${escHtml(k.val)}</span>`:''}
+          ${k.val ? `<span class="nv-val">${escHtml(k.val)}</span>` : ''}
         </div>`).join('')}
     </div>`;
   document.getElementById('workspace').appendChild(panel);
 }
 
 function toggleNV() {
-  const b=document.getElementById('nvBody'), c=document.getElementById('nvChev');
-  const open=b.style.display!=='none';
-  b.style.display=open?'none':'flex';
-  c.style.transform=open?'rotate(-90deg)':'';
+  const b = document.getElementById('nvBody');
+  const c = document.getElementById('nvChev');
+  const open = b.style.display !== 'none';
+  b.style.display = open ? 'none' : 'flex';
+  c.style.transform = open ? 'rotate(-90deg)' : '';
 }
 
+// ── Sync / Modal ──────────────────────────────────────────────────────────
 async function syncRepo() {
-  const name=document.getElementById('repoSel').value;
-  if(!name){toast('Select a chart first','err');return;}
+  const name = document.getElementById('repoSel').value;
+  if (!name) { toast('Select a chart first', 'err'); return; }
   setStatus('syncing…');
-  const d=await fetch(`/api/repos/${name}/sync`,{method:'POST'}).then(r=>r.json());
-  if(d.ok){toast(d.message,'ok');await onRepoChange();}
-  else{toast(d.message||'Sync failed','err');setStatus('error');}
+  const d = await fetch(`/api/repos/${name}/sync`, {method:'POST'}).then(r => r.json());
+  if (d.ok) { toast(d.message, 'ok'); await onRepoChange(); }
+  else { toast(d.message || 'Sync failed', 'err'); setStatus('error'); }
 }
 
-function openModal(){document.getElementById('modal').classList.add('open');}
-function closeModal(){document.getElementById('modal').classList.remove('open');}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
-async function submitModal(){
-  const payload={name:v('mName'),helm_repo_url:v('mUrl'),chart_name:v('mChart'),github_repo:v('mGh')};
-  if(!payload.name||!payload.helm_repo_url||!payload.chart_name||!payload.github_repo){toast('Fill all fields','err');return;}
-  const d=await fetch('/api/repos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json());
-  if(d.ok){toast('Added '+payload.name,'ok');closeModal();location.reload();}
+function openModal()  { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal')) closeModal();
+});
+async function submitModal() {
+  const p = { name:v('mName'), helm_repo_url:v('mUrl'), chart_name:v('mChart'), github_repo:v('mGh') };
+  if (!p.name||!p.helm_repo_url||!p.chart_name||!p.github_repo) { toast('Fill all fields','err'); return; }
+  const d = await fetch('/api/repos', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p)}).then(r=>r.json());
+  if (d.ok) { toast('Added '+p.name,'ok'); closeModal(); location.reload(); }
   else toast(d.error||'Failed','err');
 }
 
-function showEmpty(){
-  document.getElementById('workspace').innerHTML=`<div class="empty"><div class="empty-icon">⎈</div><h2>skewlog</h2><p>Before you upgrade, check the skew.</p><ul class="empty-steps"><li><div class="step-n">1</div>Choose a chart</li><li><div class="step-n">2</div>Set current version <span style="color:var(--red)">←</span></li><li><div class="step-n">3</div>Set target version <span style="color:var(--green)">→</span></li><li><div class="step-n">4</div>Hit Compare</li></ul></div>`;
-  document.getElementById('filetabs').style.display='none';
-  ['sFiles','sAdd','sDel','sNew','sBrk'].forEach(id=>document.getElementById(id).style.display='none');
+// ── Helpers ───────────────────────────────────────────────────────────────
+function showEmpty() {
+  document.getElementById('workspace').innerHTML = `<div class="empty"><div class="empty-icon">⎈</div><h2>skewlog</h2><p>Before you upgrade, check the skew.</p><ul class="empty-steps"><li><div class="sn">1</div>Choose a chart — target defaults to latest</li><li><div class="sn">2</div>Current version auto-sets to one below</li><li><div class="sn">3</div>Adjust if needed, then hit Compare</li></ul></div>`;
+  document.getElementById('filetabs').style.display = 'none';
+  ['sFiles','sAdd','sDel','sNew','sBrk'].forEach(id => document.getElementById(id).style.display = 'none');
 }
-function showLoading(){
-  document.getElementById('workspace').innerHTML=`<div class="loading-state"><div class="spin"></div><span>Downloading chart tarballs and building diff…</span><span style="color:var(--text3);font-size:11px">Cached after first load</span></div>`;
-  document.getElementById('filetabs').style.display='none';
+function showLoading() {
+  document.getElementById('workspace').innerHTML = `<div class="loading-state"><div class="spin"></div><span>Downloading chart tarballs and building diff…</span><span style="color:var(--text3);font-size:12px">Cached after first load</span></div>`;
+  document.getElementById('filetabs').style.display = 'none';
 }
-function setStatus(m){document.getElementById('statusTxt').textContent=m;}
-function sv(sid,vid,val){const s=document.getElementById(sid);s.style.display='flex';document.getElementById(vid).textContent=val;}
-function enc(s){return encodeURIComponent(s);}
-function v(id){return document.getElementById(id).value.trim();}
-function shortName(p){const pts=p.split('/');return pts.length>2?'…/'+pts.slice(-2).join('/'):p;}
-function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+type;setTimeout(()=>el.className='',3200);}
+function setStatus(m) { document.getElementById('statusTxt').textContent = m; }
+function sv(sid, vid, val) { const s = document.getElementById(sid); s.style.display = 'flex'; document.getElementById(vid).textContent = val; }
+function enc(s) { return encodeURIComponent(s); }
+function v(id) { return document.getElementById(id).value.trim(); }
+function shortName(p) { const pts = p.split('/'); return pts.length > 2 ? '…/'+pts.slice(-2).join('/') : p; }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'show '+type; setTimeout(() => el.className='', 3200); }
 
 boot();
 </script>
