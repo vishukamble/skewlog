@@ -1,5 +1,5 @@
 """
-SKEW Log
+Helm Chart Diff Tool
 Tracks SRE helm repos, compares versions, shows diffs and breaking changes.
 """
 
@@ -672,6 +672,60 @@ def api_add_repo():
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Repo already exists'}), 409
     return jsonify({'ok': True})
+
+
+@app.route('/api/repos/<repo_name>/fetch-version', methods=['POST'])
+def api_fetch_version(repo_name):
+    """Fetch a specific version on demand and cache it — used for manual version entry."""
+    version = request.json.get('version', '').strip()
+    if not version:
+        return jsonify({'error': 'version required'}), 400
+
+    db = get_db()
+    row = db.execute("SELECT * FROM repos WHERE name=?", (repo_name,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Repo not found'}), 404
+
+    # Check if already in DB
+    existing = db.execute(
+        "SELECT version FROM chart_versions WHERE repo_name=? AND version=?",
+        (repo_name, version)
+    ).fetchone()
+    if existing:
+        return jsonify({'ok': True, 'version': version, 'cached': True})
+
+    # Fetch the helm index and look for this specific version
+    index = fetch_helm_index(row['helm_repo_url'])
+    if not index:
+        return jsonify({'error': 'Failed to fetch helm index'}), 500
+
+    entries = index.get('entries', {}).get(row['chart_name'], [])
+    matched = None
+    for entry in entries:
+        v = entry.get('version', '')
+        if v == version or v == version.lstrip('v') or v.lstrip('v') == version.lstrip('v'):
+            matched = entry
+            break
+
+    if not matched:
+        return jsonify({'error': f'Version {version} not found in helm repo'}), 404
+
+    urls = matched.get('urls', [])
+    chart_url = resolve_chart_url(row['helm_repo_url'], urls[0]) if urls else None
+    created = matched.get('created', '')
+    if isinstance(created, datetime):
+        release_date = created.isoformat()[:10]
+    else:
+        release_date = str(created)[:10] if created else ''
+
+    db.execute("""
+        INSERT OR IGNORE INTO chart_versions
+          (repo_name, version, chart_url, release_date, fetched_at)
+        VALUES (?, ?, ?, ?, ?)
+    """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
+    db.commit()
+
+    return jsonify({'ok': True, 'version': matched.get('version', version), 'cached': False})
 
 # ─── Startup ─────────────────────────────────────────────────────────────────
 

@@ -5,205 +5,380 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>skewlog</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#0d0f12; --s1:#13161c; --s2:#191c24; --s3:#1f232e;
-  --border:#272b38; --border2:#30354a;
-  --text:#d4d8e8; --text2:#9298b0; --text3:#454a62;
-  --accent:#4f8ef7; --green:#34d399; --red:#f87171; --yellow:#fbbf24;
-  --add-bg:rgba(52,211,153,.07); --del-bg:rgba(248,113,113,.07);
+  --bg:        #0b0d11;
+  --surface:   #161920;
+  --surface2:  #1c2029;
+  --border:    #262a35;
+  --border2:   #303545;
+  --accent:    #ffb74d;
+  --accent-h:  #ffa726;
+  --text:      #e2e4ed;
+  --text2:     #9298b0;
+  --text3:     #454a62;
+  --green:     #4ade80;
+  --red:       #f87171;
+  --yellow:    #fbbf24;
+  --add-bg:    rgba(74,222,128,.06);
+  --del-bg:    rgba(248,113,113,.06);
+  --font:      'Inter', sans-serif;
+  --mono:      'IBM Plex Mono', monospace;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
 /* ── TOPBAR ── */
-.topbar{height:54px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:10px;flex-shrink:0;flex-wrap:nowrap}
-.logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.5px;display:flex;align-items:center;gap:6px;flex-shrink:0}
-.logo-dot{color:var(--accent)}
-.vd{width:1px;height:24px;background:var(--border);flex-shrink:0;margin:0 4px}
-.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;flex-shrink:0}
+.topbar {
+  height: 70px; flex-shrink: 0;
+  background: rgba(11,13,17,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px; gap: 20px; z-index: 100;
+}
+.logo {
+  font-family: var(--mono); font-weight: 600; font-size: 18px;
+  letter-spacing: -0.5px; flex-shrink: 0;
+}
+.logo-accent { color: var(--accent); }
 
-select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 28px 7px 11px;border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border-color .15s;flex-shrink:0}
-select:focus{outline:none;border-color:var(--accent)}
-select:hover{border-color:var(--border2)}
-#repoSel{min-width:170px}
-.v-old{border-color:rgba(248,113,113,.4)!important;min-width:155px}
-.v-old:focus{border-color:var(--red)!important}
-.v-new{border-color:rgba(52,211,153,.4)!important;min-width:175px}
-.v-new:focus{border-color:var(--green)!important}
-.arr{color:var(--text3);font-size:20px;flex-shrink:0;line-height:1}
+/* Controls pill */
+.controls-wrapper {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); padding: 6px 14px;
+  border-radius: 12px; border: 1px solid var(--border);
+}
+.cg { display: flex; flex-direction: column; gap: 2px; }
+.cg label { font-size: 9px; text-transform: uppercase; color: var(--text3); font-weight: 600; letter-spacing: .06em; }
+select {
+  background: transparent; border: none; color: var(--text);
+  font-family: var(--mono); font-size: 13px; cursor: pointer; outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 4px center;
+  padding-right: 18px; min-width: 130px;
+}
+select:disabled { opacity: .4; }
+.v-old option:first-child { color: var(--text3); }
+.ctl-div { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+.arr { color: var(--text3); font-size: 18px; flex-shrink: 0; }
 
-.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--text2);font-size:12px;font-family:'IBM Plex Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0}
-.btn:hover{background:var(--s3);color:var(--text);border-color:var(--border2)}
-.btn:disabled{opacity:.35;pointer-events:none}
-.btn-cmp{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important;font-weight:600!important;padding:7px 20px!important}
-.btn-cmp:hover{background:#6ba0ff!important;border-color:#6ba0ff!important}
-.ml{margin-left:auto}
+/* Manual version popover */
+.ver-wrap { position: relative; }
+.manual-pop {
+  display: none; position: absolute; top: calc(100% + 10px); left: 0; z-index: 200;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 10px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.6);
+  width: 250px; flex-direction: column; gap: 8px;
+}
+.manual-pop.open { display: flex; }
+.mp-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-family: var(--mono); }
+.mp-row { display: flex; gap: 6px; }
+.mp-input {
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 7px 10px; border-radius: 6px;
+  font-size: 13px; font-family: var(--mono); outline: none; transition: border-color .15s;
+}
+.mp-input:focus { border-color: var(--accent); }
+.mp-btn {
+  padding: 7px 12px; border-radius: 6px; border: none;
+  background: var(--accent); color: #000; font-size: 12px;
+  font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s;
+}
+.mp-btn:hover { background: var(--accent-h); }
+.mp-hint { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+/* Buttons */
+.btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 18px; border-radius: 8px;
+  border: none; font-family: var(--font);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s; white-space: nowrap; flex-shrink: 0;
+}
+.btn:disabled { opacity: .25; pointer-events: none; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { background: var(--accent-h); transform: translateY(-1px); }
+.btn-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text2); cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: all .15s; flex-shrink: 0;
+}
+.btn-icon:hover { background: var(--surface2); color: var(--text); border-color: var(--border2); }
+.ml { margin-left: auto; }
+
+/* ── HERO ── */
+.hero {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 0 40px; transition: opacity .5s ease, transform .5s ease; overflow: hidden;
+}
+.hero.fade-out { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+.hero-content { max-width: 860px; text-align: center; }
+.hero h1 { font-size: 52px; font-weight: 800; line-height: 1.1; margin-bottom: 20px; }
+.text-gradient {
+  background: linear-gradient(90deg, var(--accent), #fff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero p { font-size: 16px; color: var(--text2); line-height: 1.7; max-width: 580px; margin: 0 auto 48px; }
+.hero p code { font-family: var(--mono); color: var(--accent); font-size: 14px; }
+.feature-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.feature-card {
+  background: var(--surface); padding: 24px; border-radius: 14px;
+  border: 1px solid var(--border); text-align: left;
+  transition: border-color .2s, transform .2s;
+}
+.feature-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.f-icon { color: var(--accent); font-size: 22px; margin-bottom: 10px; }
+.feature-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.feature-card p { font-size: 13px; color: var(--text2); line-height: 1.6; }
 
 /* ── STATS BAR ── */
-.statsbar{height:33px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2)}
-.stat{display:flex;align-items:center;gap:6px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
-.gv{color:var(--green);font-weight:600}
-.rv{color:var(--red);font-weight:600}
-.yv{color:var(--yellow);font-weight:600}
-.wv{color:var(--text);font-weight:600}
+.statsbar {
+  height: 34px; flex-shrink: 0;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 20px;
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
+}
+.stat { display: flex; align-items: center; gap: 6px; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+.gv { color: var(--green); font-weight: 600; }
+.rv { color: var(--red); font-weight: 600; }
+.yv { color: var(--yellow); font-weight: 600; }
+.wv { color: var(--text); font-weight: 600; }
 
-/* ── FILE TABS ── */
-.filetabs{background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:10px 16px;gap:6px;flex-shrink:0;overflow-x:auto;min-height:54px}
-.filetabs::-webkit-scrollbar{height:4px}
-.filetabs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.ftab{padding:7px 16px;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:400;color:var(--text2);cursor:pointer;border-radius:7px;border:1px solid var(--border);white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:8px;background:var(--s1);flex-shrink:0}
-.ftab:hover{color:var(--text);border-color:var(--border2);background:var(--s3)}
-.ftab.active{color:#fff;background:var(--accent);border-color:var(--accent)}
-.ftab.active .fdot{background:#fff!important}
-.fdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.fdot.modified{background:var(--accent)}
-.fdot.added{background:var(--green)}
-.fdot.removed{background:var(--red)}
-.fdot.unchanged{background:var(--text3)}
+/* ── APP LAYOUT ── */
+.app-layout {
+  flex: 1; display: grid;
+  grid-template-columns: 240px 1fr;
+  overflow: hidden; min-height: 0;
+}
 
-/* ── WORKSPACE ── */
-.workspace{flex:1;display:flex;flex-direction:column;overflow:hidden}
+/* ── SIDEBAR ── */
+.file-sidebar {
+  border-right: 1px solid var(--border);
+  overflow-y: auto; padding: 10px;
+  background: var(--surface);
+}
+.file-sidebar::-webkit-scrollbar { width: 4px; }
+.file-sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.sidebar-label {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text3); font-family: var(--mono); padding: 4px 6px 8px;
+}
+.ftab {
+  padding: 9px 12px; border-radius: 7px; cursor: pointer;
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
+  margin-bottom: 3px; transition: all .12s;
+  display: flex; align-items: center; gap: 8px;
+  white-space: nowrap; overflow: hidden;
+}
+.ftab:hover { background: var(--surface2); color: var(--text); }
+.ftab.active { background: rgba(255,183,77,.1); color: var(--accent); border: 1px solid rgba(255,183,77,.2); }
+.ftab.active .fdot { background: var(--accent) !important; }
+.fdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.fdot.modified { background: var(--accent); }
+.fdot.added    { background: var(--green); }
+.fdot.removed  { background: var(--red); }
+.fdot.unchanged { background: var(--text3); }
+.fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* ── SIDE BY SIDE ── */
-.diff-pane{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;min-height:0}
-.diff-side{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
-.diff-side:last-child{border-right:none}
-.diff-side-hdr{padding:10px 18px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.sv-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em}
-.sv-ver{font-weight:700;font-size:15px}
-.sv-ver.old{color:var(--red)}
-.sv-ver.new{color:var(--green)}
-.sv-chg{margin-left:auto;font-size:12px;font-family:'IBM Plex Mono',monospace}
-.diff-code{flex:1;overflow:auto}
-.diff-code::-webkit-scrollbar{width:5px;height:5px}
-.diff-code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+/* ── DIFF PANE ── */
+.diff-container { display: flex; flex-direction: column; overflow: hidden; }
+.diff-pane {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+  overflow: hidden; min-height: 0;
+}
+.diff-side { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+.diff-side:last-child { border-right: none; }
+.diff-side-hdr {
+  padding: 9px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono); display: flex; align-items: center;
+  gap: 10px; flex-shrink: 0;
+}
+.sv-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
+.sv-ver { font-weight: 700; font-size: 14px; }
+.sv-ver.old { color: var(--red); }
+.sv-ver.new { color: var(--green); }
+.sv-chg { margin-left: auto; font-size: 12px; font-family: var(--mono); }
+.diff-code { flex: 1; overflow: auto; }
+.diff-code::-webkit-scrollbar { width: 5px; height: 5px; }
+.diff-code::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.6}
-.ct td{padding:1px 0;vertical-align:top;white-space:pre}
-.ct .ln{color:var(--text2);text-align:right;min-width:52px;padding-right:14px;padding-left:10px;user-select:none;border-right:1px solid var(--border);font-size:12px}
-.ct .code{padding-left:14px;padding-right:16px;color:#c8cde0}
-.ct tr.add{background:var(--add-bg)}
-.ct tr.add .ln{color:var(--green);border-right-color:rgba(52,211,153,.25)}
-.ct tr.add .code{color:#86efcd}
-.ct tr.del{background:var(--del-bg)}
-.ct tr.del .ln{color:var(--red);border-right-color:rgba(248,113,113,.25)}
-.ct tr.del .code{color:#fbb3b3}
-.ct tr.hunk .code{color:var(--accent);background:rgba(79,142,247,.05)}
-.ct tr.hunk .ln{color:var(--accent)}
+table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; line-height: 1.6; }
+.ct td { padding: 1px 0; vertical-align: top; white-space: pre; }
+.ct .ln { color: var(--text3); text-align: right; min-width: 48px; padding-right: 12px; padding-left: 8px; user-select: none; border-right: 1px solid var(--border); font-size: 12px; }
+.ct .code { padding-left: 14px; padding-right: 16px; color: #c8cde0; }
+.ct tr.add { background: var(--add-bg); }
+.ct tr.add .ln { color: var(--green); border-right-color: rgba(74,222,128,.2); }
+.ct tr.add .code { color: #86efac; }
+.ct tr.del { background: var(--del-bg); }
+.ct tr.del .ln { color: var(--red); border-right-color: rgba(248,113,113,.2); }
+.ct tr.del .code { color: #fca5a5; }
+.ct tr.hunk .code { color: var(--accent); background: rgba(255,183,77,.04); }
+.ct tr.hunk .ln { color: var(--accent); }
 
 /* ── NEW VALUES PANEL ── */
-.nv-panel{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;display:flex;flex-direction:column;max-height:210px}
-.nv-hdr{padding:10px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;flex-shrink:0}
-.nv-title{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.07em}
-.nv-badge{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.22);color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 8px;border-radius:4px}
-.nv-desc{font-size:11px;color:var(--text3);margin-left:auto}
-.nv-body{overflow-y:auto;padding:12px 20px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
-.nv-body::-webkit-scrollbar{width:4px}
-.nv-body::-webkit-scrollbar-thumb{background:var(--border2)}
-.nv-chip{background:var(--s2);border:1px solid rgba(52,211,153,.18);border-radius:6px;padding:7px 13px;font-family:'IBM Plex Mono',monospace;font-size:12px;display:flex;flex-direction:column;gap:3px;max-width:280px;cursor:default;transition:border-color .15s}
-.nv-chip:hover{border-color:rgba(52,211,153,.45)}
-.nv-key{color:var(--green);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.nv-val{color:var(--text3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-panel { border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; display: flex; flex-direction: column; max-height: 200px; }
+.nv-hdr { padding: 9px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; flex-shrink: 0; }
+.nv-title { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: .07em; }
+.nv-badge { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.2); color: var(--green); font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+.nv-desc { font-size: 11px; color: var(--text3); margin-left: auto; }
+.nv-body { overflow-y: auto; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+.nv-chip { background: var(--surface2); border: 1px solid rgba(74,222,128,.15); border-radius: 6px; padding: 7px 12px; font-family: var(--mono); font-size: 11px; display: flex; flex-direction: column; gap: 3px; max-width: 260px; transition: border-color .15s; }
+.nv-chip:hover { border-color: rgba(74,222,128,.4); }
+.nv-key { color: var(--green); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-val { color: var(--text3); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── EMPTY / LOADING ── */
-.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text3)}
-.empty-icon{font-size:40px;opacity:.2}
-.empty h2{font-size:17px;font-weight:500;color:var(--text2)}
-.empty p{font-size:13px;color:var(--text2);text-align:center;max-width:320px;line-height:1.7}
-.empty-steps{display:flex;flex-direction:column;gap:7px;text-align:left;margin-top:4px}
-.empty-steps li{display:flex;align-items:center;gap:9px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:var(--text2);list-style:none}
-.sn{width:20px;height:20px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--accent);flex-shrink:0}
-.loading-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text2);font-family:'IBM Plex Mono',monospace;font-size:13px}
-.spin{width:24px;height:24px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
+.empty-diff { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 14px; font-family: var(--mono); }
+.loading-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--text2); font-family: var(--mono); font-size: 13px; }
+.spin { width: 26px; height: 26px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── TOAST ── */
-#toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text);box-shadow:0 4px 24px rgba(0,0,0,.5);transform:translateY(60px);opacity:0;transition:all .25s ease;z-index:1000}
-#toast.show{transform:translateY(0);opacity:1}
-#toast.ok{border-color:rgba(52,211,153,.4);color:var(--green)}
-#toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
+#toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 12px; font-family: var(--mono); color: var(--text); box-shadow: 0 4px 24px rgba(0,0,0,.5); transform: translateY(60px); opacity: 0; transition: all .25s ease; z-index: 1000; }
+#toast.show { transform: translateY(0); opacity: 1; }
+#toast.ok  { border-color: rgba(74,222,128,.4); color: var(--green); }
+#toast.err { border-color: rgba(248,113,113,.4); color: var(--red); }
 
 /* ── MODAL ── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
-.overlay.open{opacity:1;pointer-events:all}
-.modal{background:var(--s1);border:1px solid var(--border2);border-radius:10px;width:460px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.96);transition:transform .2s}
-.overlay.open .modal{transform:scale(1)}
-.modal-title{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;margin-bottom:20px;color:var(--text)}
-.fg{margin-bottom:13px}
-.flabel{display:block;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
-.finput{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:8px 11px;border-radius:6px;font-size:13px;font-family:'IBM Plex Mono',monospace;transition:border-color .15s}
-.finput:focus{outline:none;border-color:var(--accent)}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: flex; align-items: center; justify-content: center; z-index: 300; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.overlay.open { opacity: 1; pointer-events: all; }
+.modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 12px; width: 460px; padding: 28px; box-shadow: 0 24px 60px rgba(0,0,0,.6); transform: scale(.96); transition: transform .2s; }
+.overlay.open .modal { transform: scale(1); }
+.modal-title { font-family: var(--mono); font-size: 15px; font-weight: 600; margin-bottom: 20px; }
+.fg { margin-bottom: 14px; }
+.flabel { display: block; font-size: 10px; color: var(--text3); font-family: var(--mono); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+.finput { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 7px; font-size: 13px; font-family: var(--mono); outline: none; transition: border-color .15s; }
+.finput:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--text2); padding: 9px 18px; border-radius: 8px; font-family: var(--font); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); }
 
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+.hidden { display: none !important; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 </style>
 </head>
 <body>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo">⎈ skew<span class="logo-dot">.</span>log</div>
-  <div class="vd"></div>
-  <span class="field-label">chart</span>
-  <select id="repoSel" onchange="onRepoChange()">
-    <option value="">— select —</option>
-  </select>
-  <div class="vd"></div>
-  <!-- Version pair + Compare all together -->
-  <select class="v-old" id="fromSel" disabled>
-    <option value="">current version</option>
-  </select>
-  <span class="arr">→</span>
-  <select class="v-new" id="toSel" disabled onchange="onToChange()">
-    <option value="">target version</option>
-  </select>
-  <button class="btn btn-cmp" id="compareBtn" onclick="runCompare()" disabled>Compare</button>
-  <!-- Utility buttons pushed right -->
+<!-- ── TOPBAR ── -->
+<nav class="topbar">
+  <img src="/static/logo.svg" alt="skewlog" style="height:36px">
+
+  <div class="controls-wrapper">
+    <div class="cg">
+      <label>Chart</label>
+      <select id="repoSel" onchange="onRepoChange()">
+        <option value="">Select repository</option>
+      </select>
+    </div>
+    <div class="ctl-div"></div>
+    <div class="cg">
+      <label>Current</label>
+      <div class="ver-wrap">
+        <select class="v-old" id="fromSel" disabled onchange="onFromChange()">
+          <option value="">—</option>
+        </select>
+        <div class="manual-pop" id="fromManual">
+          <span class="mp-label">Enter version manually</span>
+          <div class="mp-row">
+            <input class="mp-input" id="fromManualInput" placeholder="e.g. 8.3.0"
+                   onkeydown="if(event.key==='Enter')fetchManualVersion('from')">
+            <button class="mp-btn" onclick="fetchManualVersion('from')">Fetch</button>
+          </div>
+          <span class="mp-hint">Pulls directly from helm repo</span>
+        </div>
+      </div>
+    </div>
+    <span class="arr">→</span>
+    <div class="cg">
+      <label>Target</label>
+      <div class="ver-wrap">
+        <select class="v-new" id="toSel" disabled onchange="onToChange()">
+          <option value="">—</option>
+        </select>
+        <div class="manual-pop" id="toManual">
+          <span class="mp-label">Enter version manually</span>
+          <div class="mp-row">
+            <input class="mp-input" id="toManualInput" placeholder="e.g. 9.4.5"
+                   onkeydown="if(event.key==='Enter')fetchManualVersion('to')">
+            <button class="mp-btn" onclick="fetchManualVersion('to')">Fetch</button>
+          </div>
+          <span class="mp-hint">Pulls directly from helm repo</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="compareBtn" onclick="handleCompareClick()" disabled>Compare Skew</button>
+  </div>
+
   <div class="ml" style="display:flex;gap:8px">
-    <button class="btn" onclick="syncRepo()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      Sync
+    <button class="btn-icon" onclick="syncRepo()" title="Sync chart versions">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     </button>
-    <button class="btn" onclick="openModal()">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Add Chart
+    <button class="btn-icon" onclick="openModal()" title="Add chart">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
   </div>
-</div>
+</nav>
 
-<!-- STATS BAR -->
-<div class="statsbar">
-  <div class="stat"><div class="dot"></div><span id="statusTxt">ready</span></div>
-  <div class="stat" id="sFiles" style="display:none"><span class="wv" id="sFilesV">—</span> files changed</div>
-  <div class="stat" id="sAdd"   style="display:none"><span class="gv" id="sAddV">—</span> additions</div>
-  <div class="stat" id="sDel"   style="display:none"><span class="rv" id="sDelV">—</span> deletions</div>
-  <div class="stat" id="sNew"   style="display:none"><span class="gv" id="sNewV">—</span> new keys in values.yaml</div>
-  <div class="stat" id="sBrk"   style="display:none"><span class="yv" id="sBrkV">—</span> versions with breaking changes</div>
-</div>
-
-<!-- FILE TABS -->
-<div class="filetabs" id="filetabs" style="display:none"></div>
-
-<!-- WORKSPACE -->
-<div class="workspace" id="workspace">
-  <div class="empty">
-    <div class="empty-icon">⎈</div>
-    <h2>skewlog</h2>
-    <p>Before you upgrade, check the skew.</p>
-    <ul class="empty-steps">
-      <li><div class="sn">1</div>Choose a chart — target defaults to latest</li>
-      <li><div class="sn">2</div>Current version auto-sets to one below target</li>
-      <li><div class="sn">3</div>Adjust either, then hit Compare</li>
-    </ul>
+<!-- ── HERO ── -->
+<section class="hero" id="heroSection">
+  <div class="hero-content">
+    <h1>Infrastructure evolves.<br><span class="text-gradient">Don't guess the changes.</span></h1>
+    <p>Skewlog fetches Helm chart manifests, calculates the delta, and surfaces new <code>values.yaml</code> keys before you <code>helm upgrade</code>.</p>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="f-icon">✦</div>
+        <h3>Side-by-Side Diff</h3>
+        <p>Visual comparison of templates and values across any two versions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">⚠</div>
+        <h3>Breaking Detection</h3>
+        <p>Flags versions containing breaking changes across the upgrade path.</p>
+      </div>
+      <div class="feature-card">
+        <div class="f-icon">⎈</div>
+        <h3>Value Discovery</h3>
+        <p>Instantly see new keys introduced in the target version's values.yaml.</p>
+      </div>
+    </div>
   </div>
+</section>
+
+<!-- ── APP WORKSPACE (hidden until first compare) ── -->
+<div id="appWorkspace" class="hidden" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
+
+  <!-- Stats bar -->
+  <div class="statsbar">
+    <div class="stat"><div class="sdot"></div><span id="statusTxt">ready</span></div>
+    <div class="stat" id="sFiles" style="display:none"><span class="wv" id="sFilesV">—</span> files changed</div>
+    <div class="stat" id="sAdd"   style="display:none"><span class="gv" id="sAddV">—</span> additions</div>
+    <div class="stat" id="sDel"   style="display:none"><span class="rv" id="sDelV">—</span> deletions</div>
+    <div class="stat" id="sNew"   style="display:none"><span class="gv" id="sNewV">—</span> new keys in values.yaml</div>
+    <div class="stat" id="sBrk"   style="display:none"><span class="yv" id="sBrkV">—</span> versions with breaking changes</div>
+  </div>
+
+  <!-- Main layout: sidebar + diff -->
+  <div class="app-layout">
+    <aside class="file-sidebar" id="fileSidebar">
+      <div class="sidebar-label">Files</div>
+    </aside>
+    <div class="diff-container" id="diffContainer">
+      <div class="empty-diff">Select a file from the sidebar</div>
+    </div>
+  </div>
+
 </div>
 
-<!-- ADD CHART MODAL -->
+<!-- ── ADD CHART MODAL ── -->
 <div class="overlay" id="modal">
   <div class="modal">
     <div class="modal-title">Add Helm Chart</div>
@@ -212,8 +387,8 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
     <div class="fg"><label class="flabel">Chart Name</label><input class="finput" id="mChart" placeholder="my-chart"></div>
     <div class="fg"><label class="flabel">GitHub Repo (release notes)</label><input class="finput" id="mGh" placeholder="org/repo"></div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-cmp" onclick="submitModal()">Add</button>
+      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitModal()">Add Chart</button>
     </div>
   </div>
 </div>
@@ -223,6 +398,7 @@ table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospa
 <script>
 const S = { repo:null, versions:[], latest:null, diffData:null, currentFile:null, newKeys:[] };
 
+// ── Boot ─────────────────────────────────────────────────────────────────
 async function boot() {
   const repos = await fetch('/api/repos').then(r => r.json());
   const sel = document.getElementById('repoSel');
@@ -233,7 +409,23 @@ async function boot() {
   });
 }
 
-// ── Repo change ──────────────────────────────────────────────────────────
+// ── Hero → App transition ─────────────────────────────────────────────────
+function handleCompareClick() {
+  const hero = document.getElementById('heroSection');
+  const app  = document.getElementById('appWorkspace');
+  if (!hero.classList.contains('hidden')) {
+    hero.classList.add('fade-out');
+    setTimeout(() => {
+      hero.classList.add('hidden');
+      app.classList.remove('hidden');
+      // Fix flex layout after unhiding
+      app.style.display = 'flex';
+    }, 500);
+  }
+  runCompare();
+}
+
+// ── Repo change ───────────────────────────────────────────────────────────
 async function onRepoChange() {
   const name = document.getElementById('repoSel').value;
   if (!name) return;
@@ -243,32 +435,28 @@ async function onRepoChange() {
 
   const d = await fetch(`/api/repos/${name}/versions`).then(r => r.json());
   if (d.error) { setStatus('error: ' + d.error); return; }
-
   S.versions = d.versions || [];
   S.latest = d.latest;
   fillSels();
   setStatus('ready');
 }
 
-// ── Fill version selectors ────────────────────────────────────────────────
+// ── Version selects ───────────────────────────────────────────────────────
 function fillSels() {
   const fromSel = document.getElementById('fromSel');
   const toSel   = document.getElementById('toSel');
-
-  fromSel.innerHTML = '<option value="">— current version —</option>';
-  toSel.innerHTML   = '<option value="">— target version —</option>';
+  fromSel.innerHTML = '';
+  toSel.innerHTML   = '';
 
   S.versions.forEach(v => {
     const isLatest = v.version === S.latest;
     const brk = v.has_breaking_changes ? ' ⚠' : '';
-
-    // RIGHT (target): all versions
+    // Target: all versions
     const oTo = document.createElement('option');
     oTo.value = v.version;
     oTo.textContent = (isLatest ? v.version + ' (latest)' : v.version) + brk;
     toSel.appendChild(oTo);
-
-    // LEFT (from): never include latest
+    // From: never latest
     if (!isLatest) {
       const oFrom = document.createElement('option');
       oFrom.value = v.version;
@@ -277,44 +465,64 @@ function fillSels() {
     }
   });
 
-  // Default target = latest
+  // "Enter version..." last
+  ['fromSel','toSel'].forEach(id => {
+    const o = document.createElement('option');
+    o.value = '__manual__';
+    o.textContent = '↵  enter version...';
+    document.getElementById(id).appendChild(o);
+  });
+
+  // Default: target = latest, from = one below
   if (S.latest) {
     toSel.value = S.latest;
     autoSetFrom(S.latest);
   }
-
   fromSel.disabled = false;
   toSel.disabled = false;
   checkReady();
 }
 
-// Set fromSel to the version just before the selected target
 function autoSetFrom(targetVersion) {
   const fromSel = document.getElementById('fromSel');
   const idx = S.versions.findIndex(v => v.version === targetVersion);
   if (idx >= 0 && idx + 1 < S.versions.length) {
-    // versions are sorted newest-first, so idx+1 is one version older
     const prev = S.versions[idx + 1];
     if (prev && prev.version !== S.latest) {
       fromSel.value = prev.version;
-    } else if (prev) {
-      // Edge case: pick idx+2 if idx+1 is latest (shouldn't happen but safe)
-      const next = S.versions[idx + 2];
-      if (next) fromSel.value = next.version;
     }
   }
 }
 
+function onFromChange() {
+  const val = document.getElementById('fromSel').value;
+  if (val === '__manual__') {
+    document.getElementById('fromManual').classList.add('open');
+    document.getElementById('fromManualInput').focus();
+    document.getElementById('fromSel').value = '';
+  } else {
+    document.getElementById('fromManual').classList.remove('open');
+    checkReady();
+  }
+}
+
 function onToChange() {
-  const target = document.getElementById('toSel').value;
-  if (target) autoSetFrom(target);
-  checkReady();
+  const val = document.getElementById('toSel').value;
+  if (val === '__manual__') {
+    document.getElementById('toManual').classList.add('open');
+    document.getElementById('toManualInput').focus();
+    document.getElementById('toSel').value = '';
+  } else {
+    document.getElementById('toManual').classList.remove('open');
+    if (val) autoSetFrom(val);
+    checkReady();
+  }
 }
 
 function resetSels() {
-  ['fromSel','toSel'].forEach((id, i) => {
+  ['fromSel','toSel'].forEach(id => {
     const el = document.getElementById(id);
-    el.innerHTML = `<option value="">${i === 0 ? '— current version —' : '— target version —'}</option>`;
+    el.innerHTML = '<option value="">—</option>';
     el.disabled = true;
   });
   document.getElementById('compareBtn').disabled = true;
@@ -323,7 +531,46 @@ function resetSels() {
 function checkReady() {
   const f = document.getElementById('fromSel').value;
   const t = document.getElementById('toSel').value;
-  document.getElementById('compareBtn').disabled = !(f && t && f !== t);
+  document.getElementById('compareBtn').disabled = !(f && t && f !== t && f !== '__manual__' && t !== '__manual__');
+}
+
+// ── Manual version fetch ──────────────────────────────────────────────────
+async function fetchManualVersion(side) {
+  const inputId  = side === 'from' ? 'fromManualInput' : 'toManualInput';
+  const selId    = side === 'from' ? 'fromSel' : 'toSel';
+  const manualId = side === 'from' ? 'fromManual' : 'toManual';
+  const version  = document.getElementById(inputId).value.trim();
+  if (!version || !S.repo) { toast(!version ? 'Enter a version' : 'Select a chart first', 'err'); return; }
+
+  const btn = document.querySelector(`#${manualId} .mp-btn`);
+  btn.textContent = '…'; btn.disabled = true;
+
+  const res = await fetch(`/api/repos/${S.repo}/fetch-version`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({version})
+  });
+  btn.textContent = 'Fetch'; btn.disabled = false;
+
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    toast(e.error || 'Version not found', 'err'); return;
+  }
+
+  const data = await res.json();
+  const actual = data.version;
+  const sel = document.getElementById(selId);
+  if (!Array.from(sel.options).find(o => o.value === actual)) {
+    const o = document.createElement('option');
+    o.value = actual; o.textContent = actual + ' (fetched)';
+    const manualOpt = Array.from(sel.options).find(o => o.value === '__manual__');
+    sel.insertBefore(o, manualOpt);
+  }
+  sel.value = actual;
+  document.getElementById(manualId).classList.remove('open');
+  document.getElementById(inputId).value = '';
+  if (side === 'to') autoSetFrom(actual);
+  toast(`Version ${actual} loaded`, 'ok');
+  checkReady();
 }
 
 // ── Compare ───────────────────────────────────────────────────────────────
@@ -338,13 +585,15 @@ async function runCompare() {
   showLoading();
 
   const res = await fetch(`/api/repos/${S.repo}/diff?from=${enc(from)}&to=${enc(to)}`);
-  btn.disabled = false; btn.textContent = 'Compare';
+  btn.disabled = false; btn.textContent = 'Compare Skew';
   checkReady();
 
   if (!res.ok) {
     const e = await res.json().catch(() => ({}));
     toast(e.error || 'Compare failed', 'err');
-    setStatus('error'); showEmpty(); return;
+    setStatus('error');
+    showEmptyDiff('Compare failed — check chart selection');
+    return;
   }
 
   S.diffData = await res.json();
@@ -352,13 +601,13 @@ async function runCompare() {
   renderAll();
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
+// ── Render everything ─────────────────────────────────────────────────────
 function renderAll() {
   const d = S.diffData;
   const changed = d.diff.filter(f => f.status !== 'unchanged');
-  sv('sFiles', 'sFilesV', changed.length);
-  sv('sAdd',   'sAddV',   '+' + d.total_additions);
-  sv('sDel',   'sDelV',   '-' + d.total_deletions);
+  sv('sFiles','sFilesV', changed.length);
+  sv('sAdd',  'sAddV',   '+' + d.total_additions);
+  sv('sDel',  'sDelV',   '-' + d.total_deletions);
 
   S.newKeys = computeNewKeys(d);
   sv('sNew', 'sNewV', S.newKeys.length);
@@ -374,21 +623,20 @@ function renderAll() {
     return (o[a.status]||3) - (o[b.status]||3);
   });
 
-  renderTabs(sorted);
+  renderSidebar(sorted);
   const first = sorted.find(f => f.status !== 'unchanged') || sorted[0];
   if (first) selectFile(first.filename);
 }
 
-function renderTabs(files) {
-  const bar = document.getElementById('filetabs');
-  bar.innerHTML = ''; bar.style.display = 'flex';
+function renderSidebar(files) {
+  const sb = document.getElementById('fileSidebar');
+  sb.innerHTML = '<div class="sidebar-label">Files</div>';
   files.forEach(f => {
     const t = document.createElement('div');
     t.className = 'ftab'; t.dataset.file = f.filename;
     t.onclick = () => selectFile(f.filename);
-    const short = shortName(f.filename);
-    t.innerHTML = `<span class="fdot ${f.status}"></span>${escHtml(short)}`;
-    bar.appendChild(t);
+    t.innerHTML = `<span class="fdot ${f.status}"></span><span class="fname" title="${escHtml(f.filename)}">${escHtml(shortName(f.filename))}</span>`;
+    sb.appendChild(t);
   });
 }
 
@@ -403,20 +651,20 @@ function selectFile(filename) {
 
 // ── Side-by-side diff ─────────────────────────────────────────────────────
 function renderSBS(fd) {
-  const ws = document.getElementById('workspace');
+  const dc = document.getElementById('diffContainer');
   const { L, R } = splitDiff(fd);
   const from = S.diffData.from_version;
   const to   = S.diffData.to_version;
   const lDel = L.filter(l => l.t === 'del').length;
   const rAdd = R.filter(l => l.t === 'add').length;
 
-  ws.innerHTML = `
+  dc.innerHTML = `
     <div class="diff-pane" id="diffPane">
       <div class="diff-side">
         <div class="diff-side-hdr">
           <span class="sv-lbl">from</span>
           <span class="sv-ver old">${escHtml(from)}</span>
-          <span class="sv-chg" style="color:var(--red)">${lDel ? '-' + lDel : ''}</span>
+          <span class="sv-chg" style="color:var(--red)">${lDel ? '-'+lDel : ''}</span>
         </div>
         <div class="diff-code" id="LC"><table class="ct"><tbody id="LB"></tbody></table></div>
       </div>
@@ -424,7 +672,7 @@ function renderSBS(fd) {
         <div class="diff-side-hdr">
           <span class="sv-lbl">to</span>
           <span class="sv-ver new">${escHtml(to)}</span>
-          <span class="sv-chg" style="color:var(--green)">${rAdd ? '+' + rAdd : ''}</span>
+          <span class="sv-chg" style="color:var(--green)">${rAdd ? '+'+rAdd : ''}</span>
         </div>
         <div class="diff-code" id="RC"><table class="ct"><tbody id="RB"></tbody></table></div>
       </div>
@@ -433,7 +681,6 @@ function renderSBS(fd) {
   fillTable('LB', L);
   fillTable('RB', R);
 
-  // Sync scroll
   const lc = document.getElementById('LC');
   const rc = document.getElementById('RC');
   let lock = false;
@@ -459,56 +706,52 @@ function splitDiff(fd) {
   const lines = fd.diff || [];
   const L = [], R = [];
   if (fd.status === 'added') {
-    lines.filter(l => !l.startsWith('+++') && !l.startsWith('---') && !l.startsWith('@@'))
-         .forEach((l, i) => R.push({t:'add', n:i+1, tx:l.slice(1)}));
-    return {L, R};
+    lines.filter(l => !l.startsWith('+++')&&!l.startsWith('---')&&!l.startsWith('@@'))
+         .forEach((l,i) => R.push({t:'add',n:i+1,tx:l.slice(1)}));
+    return {L,R};
   }
   if (fd.status === 'removed') {
-    lines.filter(l => !l.startsWith('---') && !l.startsWith('+++') && !l.startsWith('@@'))
-         .forEach((l, i) => L.push({t:'del', n:i+1, tx:l.slice(1)}));
-    return {L, R};
+    lines.filter(l => !l.startsWith('---')&&!l.startsWith('+++')&&!l.startsWith('@@'))
+         .forEach((l,i) => L.push({t:'del',n:i+1,tx:l.slice(1)}));
+    return {L,R};
   }
   if (fd.status === 'unchanged') {
-    lines.forEach((l, i) => { L.push({t:'ctx',n:i+1,tx:l}); R.push({t:'ctx',n:i+1,tx:l}); });
-    return {L, R};
+    lines.forEach((l,i) => { L.push({t:'ctx',n:i+1,tx:l}); R.push({t:'ctx',n:i+1,tx:l}); });
+    return {L,R};
   }
-  let ln = 0, rn = 0;
+  let ln=0, rn=0;
   lines.forEach(line => {
-    if (line.startsWith('---') || line.startsWith('+++')) return;
+    if (line.startsWith('---')||line.startsWith('+++')) return;
     if (line.startsWith('@@')) {
       const m = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)/);
-      if (m) { ln = parseInt(m[1])-1; rn = parseInt(m[2])-1; }
-      L.push({t:'hunk', n:null, tx:line});
-      R.push({t:'hunk', n:null, tx:line});
+      if (m) { ln=parseInt(m[1])-1; rn=parseInt(m[2])-1; }
+      L.push({t:'hunk',n:null,tx:line}); R.push({t:'hunk',n:null,tx:line});
       return;
     }
-    if (line.startsWith('+')) { rn++; R.push({t:'add', n:rn, tx:line.slice(1)}); }
-    else if (line.startsWith('-')) { ln++; L.push({t:'del', n:ln, tx:line.slice(1)}); }
-    else { ln++; rn++; const tx = line.slice(1); L.push({t:'ctx',n:ln,tx}); R.push({t:'ctx',n:rn,tx}); }
+    if (line.startsWith('+'))      { rn++; R.push({t:'add',n:rn,tx:line.slice(1)}); }
+    else if (line.startsWith('-')) { ln++; L.push({t:'del',n:ln,tx:line.slice(1)}); }
+    else { ln++;rn++; const tx=line.slice(1); L.push({t:'ctx',n:ln,tx}); R.push({t:'ctx',n:rn,tx}); }
   });
-  return {L, R};
+  return {L,R};
 }
 
-// ── New keys in values.yaml ───────────────────────────────────────────────
+// ── New values panel ──────────────────────────────────────────────────────
 function computeNewKeys(d) {
   const vf = d.diff.find(f => f.filename === 'values.yaml');
   if (!vf || vf.status === 'unchanged') return [];
-  const added   = (vf.diff||[]).filter(l => l.startsWith('+') && !l.startsWith('+++'));
-  const deleted = (vf.diff||[]).filter(l => l.startsWith('-') && !l.startsWith('---'));
+  const added   = (vf.diff||[]).filter(l => l.startsWith('+')&&!l.startsWith('+++'));
+  const deleted = (vf.diff||[]).filter(l => l.startsWith('-')&&!l.startsWith('---'));
   const delKeys = new Set(deleted.map(l => yamlKey(l.slice(1))).filter(Boolean));
   const seen = new Set(), result = [];
   added.forEach(line => {
     const k = yamlKey(line.slice(1));
     if (k && !delKeys.has(k) && !seen.has(k)) {
       seen.add(k);
-      result.push({ key: k, val: yamlVal(line.slice(1)) });
+      result.push({key:k, val:yamlVal(line.slice(1))});
     }
   });
   return result;
 }
-
-function yamlKey(l) { const m = l.match(/^\s*([\w.\-]+)\s*:/); return m ? m[1].trim() : null; }
-function yamlVal(l) { const m = l.match(/^\s*[\w.\-]+\s*:\s*(.+)/); if (!m) return ''; const v = m[1].trim(); return v.length > 60 ? v.slice(0,57)+'…' : v; }
 
 function attachNVPanel() {
   const panel = document.createElement('div');
@@ -521,63 +764,73 @@ function attachNVPanel() {
       <svg id="nvChev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);margin-left:8px;transition:transform .2s"><path d="m6 9 6 6 6-6"/></svg>
     </div>
     <div class="nv-body" id="nvBody">
-      ${S.newKeys.map(k => `
+      ${S.newKeys.map(k=>`
         <div class="nv-chip" title="${escHtml(k.key)}: ${escHtml(k.val)}">
           <span class="nv-key">${escHtml(k.key)}</span>
-          ${k.val ? `<span class="nv-val">${escHtml(k.val)}</span>` : ''}
+          ${k.val?`<span class="nv-val">${escHtml(k.val)}</span>`:''}
         </div>`).join('')}
     </div>`;
-  document.getElementById('workspace').appendChild(panel);
+  document.getElementById('diffContainer').appendChild(panel);
 }
 
 function toggleNV() {
-  const b = document.getElementById('nvBody');
-  const c = document.getElementById('nvChev');
+  const b=document.getElementById('nvBody'), c=document.getElementById('nvChev');
   const open = b.style.display !== 'none';
   b.style.display = open ? 'none' : 'flex';
   c.style.transform = open ? 'rotate(-90deg)' : '';
 }
 
-// ── Sync / Modal ──────────────────────────────────────────────────────────
+// ── Sync ──────────────────────────────────────────────────────────────────
 async function syncRepo() {
   const name = document.getElementById('repoSel').value;
   if (!name) { toast('Select a chart first', 'err'); return; }
   setStatus('syncing…');
-  const d = await fetch(`/api/repos/${name}/sync`, {method:'POST'}).then(r => r.json());
+  const d = await fetch(`/api/repos/${name}/sync`, {method:'POST'}).then(r=>r.json());
   if (d.ok) { toast(d.message, 'ok'); await onRepoChange(); }
-  else { toast(d.message || 'Sync failed', 'err'); setStatus('error'); }
+  else { toast(d.message||'Sync failed', 'err'); setStatus('error'); }
 }
 
+// ── Modal ─────────────────────────────────────────────────────────────────
 function openModal()  { document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target === document.getElementById('modal')) closeModal();
 });
 async function submitModal() {
-  const p = { name:v('mName'), helm_repo_url:v('mUrl'), chart_name:v('mChart'), github_repo:v('mGh') };
+  const p = {name:v('mName'),helm_repo_url:v('mUrl'),chart_name:v('mChart'),github_repo:v('mGh')};
   if (!p.name||!p.helm_repo_url||!p.chart_name||!p.github_repo) { toast('Fill all fields','err'); return; }
-  const d = await fetch('/api/repos', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(p)}).then(r=>r.json());
+  const d = await fetch('/api/repos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)}).then(r=>r.json());
   if (d.ok) { toast('Added '+p.name,'ok'); closeModal(); location.reload(); }
   else toast(d.error||'Failed','err');
 }
 
+// Close manual popovers on outside click
+document.addEventListener('click', e => {
+  ['from','to'].forEach(side => {
+    const panel = document.getElementById(side+'Manual');
+    const wrap  = panel?.parentElement;
+    if (panel && !wrap?.contains(e.target)) panel.classList.remove('open');
+  });
+});
+
 // ── Helpers ───────────────────────────────────────────────────────────────
-function showEmpty() {
-  document.getElementById('workspace').innerHTML = `<div class="empty"><div class="empty-icon">⎈</div><h2>skewlog</h2><p>Before you upgrade, check the skew.</p><ul class="empty-steps"><li><div class="sn">1</div>Choose a chart — target defaults to latest</li><li><div class="sn">2</div>Current version auto-sets to one below</li><li><div class="sn">3</div>Adjust if needed, then hit Compare</li></ul></div>`;
-  document.getElementById('filetabs').style.display = 'none';
-  ['sFiles','sAdd','sDel','sNew','sBrk'].forEach(id => document.getElementById(id).style.display = 'none');
-}
 function showLoading() {
-  document.getElementById('workspace').innerHTML = `<div class="loading-state"><div class="spin"></div><span>Downloading chart tarballs and building diff…</span><span style="color:var(--text3);font-size:12px">Cached after first load</span></div>`;
-  document.getElementById('filetabs').style.display = 'none';
+  document.getElementById('diffContainer').innerHTML =
+    `<div class="loading-state"><div class="spin"></div><span>Downloading chart tarballs and building diff…</span><span style="color:var(--text3);font-size:12px">Cached after first load</span></div>`;
 }
-function setStatus(m) { document.getElementById('statusTxt').textContent = m; }
-function sv(sid, vid, val) { const s = document.getElementById(sid); s.style.display = 'flex'; document.getElementById(vid).textContent = val; }
+function showEmptyDiff(msg) {
+  document.getElementById('diffContainer').innerHTML =
+    `<div class="empty-diff">${escHtml(msg || 'Select a file to view changes')}</div>`;
+}
+function setStatus(m) { const el = document.getElementById('statusTxt'); if(el) el.textContent = m; }
+function sv(sid,vid,val) { const s=document.getElementById(sid); s.style.display='flex'; document.getElementById(vid).textContent=val; }
 function enc(s) { return encodeURIComponent(s); }
 function v(id) { return document.getElementById(id).value.trim(); }
-function shortName(p) { const pts = p.split('/'); return pts.length > 2 ? '…/'+pts.slice(-2).join('/') : p; }
+function yamlKey(l) { const m=l.match(/^\s*([\w.\-]+)\s*:/); return m?m[1].trim():null; }
+function yamlVal(l) { const m=l.match(/^\s*[\w.\-]+\s*:\s*(.+)/); if(!m)return''; const vl=m[1].trim(); return vl.length>60?vl.slice(0,57)+'…':vl; }
+function shortName(p) { const pts=p.split('/'); return pts.length>2?'…/'+pts.slice(-2).join('/'):p; }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function toast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'show '+type; setTimeout(() => el.className='', 3200); }
+function toast(msg,type='') { const el=document.getElementById('toast'); el.textContent=msg; el.className='show '+type; setTimeout(()=>el.className='',3200); }
 
 boot();
 </script>
