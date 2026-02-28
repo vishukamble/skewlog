@@ -727,6 +727,149 @@ def api_fetch_version(repo_name):
 
     return jsonify({'ok': True, 'version': matched.get('version', version), 'cached': False})
 
+
+# ─── Upgrade Advisor ─────────────────────────────────────────────────────────
+
+def flatten_yaml(obj, prefix='', result=None):
+    """Flatten nested YAML into dot-path keys."""
+    if result is None:
+        result = {}
+    if obj is None:
+        if prefix:
+            result[prefix] = None
+        return result
+    if not isinstance(obj, dict):
+        result[prefix] = obj
+        return result
+    for key, value in obj.items():
+        new_key = f"{prefix}.{key}" if prefix else str(key)
+        if isinstance(value, dict):
+            flatten_yaml(value, new_key, result)
+        elif isinstance(value, list):
+            result[new_key] = str(value)
+        else:
+            result[new_key] = value
+    return result
+
+
+def build_advisor_report(user_flat, from_flat, to_flat):
+    """
+    Compare user's values against upstream from→to.
+    - breaking:       key user sets that was REMOVED in target upstream
+    - default_shifts: key user sets whose upstream default CHANGED
+    - new_features:   key NEW in target upstream (user doesn't have it yet)
+    """
+    from_keys = set(from_flat.keys())
+    to_keys   = set(to_flat.keys())
+    user_keys = set(user_flat.keys())
+
+    removed_upstream = from_keys - to_keys
+    added_upstream   = to_keys - from_keys
+    common           = from_keys & to_keys
+
+    breaking       = []
+    default_shifts = []
+    new_features   = []
+
+    # Keys user has that got removed in the new upstream
+    for key in sorted(removed_upstream):
+        if key in user_keys:
+            breaking.append({
+                'key': key,
+                'user_value': str(user_flat[key]),
+                'old_default': str(from_flat[key]) if from_flat[key] is not None else 'null',
+            })
+
+    # Keys user has where upstream default changed
+    for key in sorted(common):
+        old_val = from_flat[key]
+        new_val = to_flat[key]
+        if str(old_val) != str(new_val) and key in user_keys:
+            default_shifts.append({
+                'key': key,
+                'user_value': str(user_flat[key]),
+                'old_default': str(old_val) if old_val is not None else 'null',
+                'new_default': str(new_val) if new_val is not None else 'null',
+            })
+
+    # Keys new in target upstream
+    for key in sorted(added_upstream):
+        new_features.append({
+            'key': key,
+            'default_value': str(to_flat[key]) if to_flat[key] is not None else 'null',
+        })
+
+    return {
+        'breaking':       breaking,
+        'default_shifts': default_shifts,
+        'new_features':   new_features,
+    }
+
+
+@app.route('/advisor')
+def advisor_page():
+    return render_template('advisor.html')
+
+
+@app.route('/api/advisor/analyze', methods=['POST'])
+def api_advisor_analyze():
+    data = request.json or {}
+    repo_name    = data.get('repo', '').strip()
+    from_version = data.get('from', '').strip()
+    to_version   = data.get('to', '').strip()
+    user_yaml    = data.get('user_values', '').strip()
+
+    if not repo_name or not from_version or not to_version:
+        return jsonify({'error': 'repo, from, and to are required'}), 400
+    if from_version == to_version:
+        return jsonify({'error': 'from and to versions must differ'}), 400
+
+    db = get_db()
+
+    def get_values(version):
+        row = db.execute(
+            "SELECT content FROM chart_files WHERE repo_name=? AND version=? AND filename='values.yaml'",
+            (repo_name, version)
+        ).fetchone()
+        return row['content'] if row else None
+
+    from_content = get_values(from_version)
+    to_content   = get_values(to_version)
+
+    if not from_content:
+        return jsonify({'error': f'values.yaml not cached for {from_version} — run Compare first to cache it'}), 404
+    if not to_content:
+        return jsonify({'error': f'values.yaml not cached for {to_version} — run Compare first to cache it'}), 404
+
+    # Parse all three YAMLs
+    try:
+        from_parsed = yaml.safe_load(from_content) or {}
+    except Exception as e:
+        return jsonify({'error': f'Failed to parse from values.yaml: {e}'}), 500
+    try:
+        to_parsed = yaml.safe_load(to_content) or {}
+    except Exception as e:
+        return jsonify({'error': f'Failed to parse to values.yaml: {e}'}), 500
+
+    user_parsed = {}
+    if user_yaml:
+        try:
+            user_parsed = yaml.safe_load(user_yaml) or {}
+        except Exception as e:
+            return jsonify({'error': f'Failed to parse your values.yaml: {e}'}), 400
+
+    from_flat = flatten_yaml(from_parsed)
+    to_flat   = flatten_yaml(to_parsed)
+    user_flat = flatten_yaml(user_parsed)
+
+    report = build_advisor_report(user_flat, from_flat, to_flat)
+    report['from_version'] = from_version
+    report['to_version']   = to_version
+    report['repo']         = repo_name
+    report['has_user_values'] = bool(user_yaml)
+
+    return jsonify(report)
+
 # ─── Startup ─────────────────────────────────────────────────────────────────
 
 def start_background_scheduler():
