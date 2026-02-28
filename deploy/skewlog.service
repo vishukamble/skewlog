@@ -1,0 +1,28 @@
+[Unit]
+Description=skewlog — Helm Chart Diff Tool
+After=network.target
+
+[Service]
+User=skewlog
+Group=skewlog
+WorkingDirectory=/home/skewlog/app
+
+# gunicorn: 2 workers is plenty for a team tool
+# --timeout 120 because chart tarball downloads can be slow on first load
+ExecStart=/home/skewlog/venv/bin/gunicorn \
+    --workers 2 \
+    --timeout 120 \
+    --bind 127.0.0.1:5000 \
+    --access-logfile /var/log/skewlog/access.log \
+    --error-logfile /var/log/skewlog/error.log \
+    app:app
+
+Restart=on-failure
+RestartSec=5s
+
+# Limit what the process can do
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

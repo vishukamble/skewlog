@@ -1,0 +1,33 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: skewlog
+          key: ${{ secrets.DO_SSH_KEY }}
+          script: |
+            set -e
+
+            echo "→ Pulling latest code..."
+            cd /home/skewlog/app
+            git pull origin main
+
+            echo "→ Installing dependencies..."
+            /home/skewlog/venv/bin/pip install -r requirements.txt --quiet
+
+            echo "→ Restarting service..."
+            sudo systemctl restart skewlog
+
+            echo "→ Checking status..."
+            sudo systemctl is-active skewlog && echo "✓ skewlog is running"
