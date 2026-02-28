@@ -186,6 +186,25 @@ select:disabled { opacity: .4; }
 .fdot.unchanged { background: var(--text3); }
 .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* Folder groups in sidebar */
+.fgroup { margin-bottom: 4px; }
+.fgroup-header {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer;
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; letter-spacing: .06em;
+  user-select: none; transition: all .12s;
+}
+.fgroup-header:hover { color: var(--text2); background: var(--surface2); }
+.fgroup-header.has-active { color: var(--accent); }
+.fgroup-arrow { font-size: 9px; transition: transform .15s; flex-shrink: 0; }
+.fgroup-arrow.open { transform: rotate(90deg); }
+.fgroup-files { padding-left: 8px; }
+.fgroup-files.closed { display: none; }
+/* values.yaml pinned at top */
+.sidebar-pinned { border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 6px; }
+.ftab.pinned.active { background: rgba(255,183,77,.15); }
+
 /* ── DIFF PANE ── */
 .diff-container { display: flex; flex-direction: column; overflow: hidden; }
 .diff-pane {
@@ -270,7 +289,7 @@ table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); fon
 
 <!-- ── TOPBAR ── -->
 <nav class="topbar">
-  <img src="/static/logo.svg" alt="skewlog" style="height:36px">
+  <div class="logo">⎈ skew<span class="logo-accent">log</span></div>
 
   <div class="controls-wrapper">
     <div class="cg">
@@ -624,19 +643,104 @@ function renderAll() {
   });
 
   renderSidebar(sorted);
-  const first = sorted.find(f => f.status !== 'unchanged') || sorted[0];
+  // Always start on values.yaml if it changed, otherwise first changed file
+  const valuesFile = sorted.find(f => f.filename === 'values.yaml' && f.status !== 'unchanged');
+  const firstChanged = sorted.find(f => f.status !== 'unchanged');
+  const first = valuesFile || firstChanged || sorted[0];
   if (first) selectFile(first.filename);
 }
 
 function renderSidebar(files) {
   const sb = document.getElementById('fileSidebar');
   sb.innerHTML = '<div class="sidebar-label">Files</div>';
-  files.forEach(f => {
-    const t = document.createElement('div');
-    t.className = 'ftab'; t.dataset.file = f.filename;
-    t.onclick = () => selectFile(f.filename);
-    t.innerHTML = `<span class="fdot ${f.status}"></span><span class="fname" title="${escHtml(f.filename)}">${escHtml(shortName(f.filename))}</span>`;
-    sb.appendChild(t);
+
+  // Separate values.yaml (pinned) from the rest
+  const pinned = files.filter(f => f.filename === 'values.yaml');
+  const rest   = files.filter(f => f.filename !== 'values.yaml');
+
+  // Pinned: values.yaml always at top
+  if (pinned.length) {
+    const pinnedWrap = document.createElement('div');
+    pinnedWrap.className = 'sidebar-pinned';
+    pinned.forEach(f => {
+      const t = document.createElement('div');
+      t.className = 'ftab pinned'; t.dataset.file = f.filename;
+      t.onclick = () => selectFile(f.filename);
+      t.innerHTML = `<span class="fdot ${f.status}"></span><span class="fname" title="values.yaml">values.yaml</span>`;
+      pinnedWrap.appendChild(t);
+    });
+    sb.appendChild(pinnedWrap);
+  }
+
+  // Group the rest by top-level folder
+  const groups = {};
+  rest.forEach(f => {
+    const parts = f.filename.split('/');
+    // Files at root level (Chart.yaml, Chart.lock, README.md etc)
+    const folder = parts.length > 1 ? parts[0] : '__root__';
+    if (!groups[folder]) groups[folder] = [];
+    groups[folder].push(f);
+  });
+
+  // Sort: root files first, then folders alphabetically
+  const sortedFolders = Object.keys(groups).sort((a, b) => {
+    if (a === '__root__') return -1;
+    if (b === '__root__') return 1;
+    return a.localeCompare(b);
+  });
+
+  sortedFolders.forEach(folder => {
+    const groupFiles = groups[folder];
+    const hasActive = groupFiles.some(f => f.status !== 'unchanged');
+
+    if (folder === '__root__') {
+      // Root files: no folder, just list them
+      groupFiles.forEach(f => {
+        const t = document.createElement('div');
+        t.className = 'ftab'; t.dataset.file = f.filename;
+        t.onclick = () => selectFile(f.filename);
+        const label = f.filename.split('/').pop();
+        t.innerHTML = `<span class="fdot ${f.status}"></span><span class="fname" title="${escHtml(f.filename)}">${escHtml(label)}</span>`;
+        sb.appendChild(t);
+      });
+    } else {
+      // Folder group
+      const group = document.createElement('div');
+      group.className = 'fgroup';
+
+      const hdr = document.createElement('div');
+      hdr.className = 'fgroup-header' + (hasActive ? ' has-active' : '');
+      const arrow = document.createElement('span');
+      arrow.className = 'fgroup-arrow open';
+      arrow.textContent = '▶';
+      const label = document.createElement('span');
+      label.textContent = folder;
+      const count = document.createElement('span');
+      count.style.cssText = 'margin-left:auto;font-size:10px;opacity:.5';
+      count.textContent = groupFiles.length;
+      hdr.appendChild(arrow); hdr.appendChild(label); hdr.appendChild(count);
+
+      const filesWrap = document.createElement('div');
+      filesWrap.className = 'fgroup-files';
+
+      groupFiles.forEach(f => {
+        const t = document.createElement('div');
+        t.className = 'ftab'; t.dataset.file = f.filename;
+        t.onclick = () => selectFile(f.filename);
+        const fname = f.filename.split('/').slice(1).join('/') || f.filename;
+        t.innerHTML = `<span class="fdot ${f.status}"></span><span class="fname" title="${escHtml(f.filename)}">${escHtml(fname)}</span>`;
+        filesWrap.appendChild(t);
+      });
+
+      hdr.onclick = () => {
+        const closed = filesWrap.classList.toggle('closed');
+        arrow.classList.toggle('open', !closed);
+      };
+
+      group.appendChild(hdr);
+      group.appendChild(filesWrap);
+      sb.appendChild(group);
+    }
   });
 }
 
