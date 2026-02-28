@@ -886,10 +886,20 @@ def api_advisor_analyze():
     from_content = get_values(from_version)
     to_content   = get_values(to_version)
 
+    # Auto-fetch if not cached — advisor can pull chart files directly
     if not from_content:
-        return jsonify({'error': f'values.yaml not cached for {repo_name}@{from_version} — run a Compare on the Diff page first'}), 404
+        logger.info(f"Advisor: auto-fetching {repo_name}@{from_version}")
+        ensure_chart_files_cached(repo_name, from_version, db)
+        from_content = get_values(from_version)
     if not to_content:
-        return jsonify({'error': f'values.yaml not cached for {repo_name}@{to_version} — run a Compare on the Diff page first'}), 404
+        logger.info(f"Advisor: auto-fetching {repo_name}@{to_version}")
+        ensure_chart_files_cached(repo_name, to_version, db)
+        to_content = get_values(to_version)
+
+    if not from_content:
+        return jsonify({'error': f'values.yaml unavailable for {repo_name}@{from_version} — version may not exist in the helm index'}), 404
+    if not to_content:
+        return jsonify({'error': f'values.yaml unavailable for {repo_name}@{to_version} — version may not exist in the helm index'}), 404
 
     try:
         from_parsed = yaml.safe_load(from_content) or {}

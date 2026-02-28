@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>skewlog · advisor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0d11;--s1:#161920;--s2:#1c2029;--border:#262a35;--border2:#303545;
+  --accent:#ffb74d;--text:#e2e4ed;--text2:#9298b0;--text3:#454a62;
+  --green:#4ade80;--red:#f87171;--yellow:#fbbf24;--blue:#60a5fa;--purple:#a78bfa;
+  --font:'Inter',sans-serif;--mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+.nav{height:58px;background:rgba(11,13,17,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:20px;position:sticky;top:0;z-index:100}
+.logo{font-family:var(--mono);font-weight:600;font-size:17px;letter-spacing:-.5px;text-decoration:none;color:var(--text)}
+.logo-accent{color:var(--accent)}
+.nav-links{display:flex;gap:4px;margin-left:16px}
+.nav-link{padding:6px 14px;border-radius:7px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all .15s}
+.nav-link:hover{color:var(--text);background:var(--s2)}
+.nav-link.active{color:var(--accent);background:rgba(255,183,77,.08)}
+.page{max-width:1060px;margin:0 auto;padding:44px 28px 80px}
+.page-title{font-size:24px;font-weight:800;margin-bottom:6px}
+.page-sub{color:var(--text2);font-size:14px;line-height:1.7;max-width:640px;margin-bottom:36px}
+.setup-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:26px;margin-bottom:32px}
+.setup-row{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:14px;align-items:end}
+.fg{display:flex;flex-direction:column;gap:6px}
+.flabel{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em}
+select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:9px 28px 9px 12px;border-radius:8px;font-size:13px;font-family:var(--mono);outline:none;transition:border-color .15s;appearance:none;cursor:pointer;width:100%;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+select:focus{border-color:var(--accent)}
+select:disabled{opacity:.35}
+.analyze-btn{padding:9px 22px;border-radius:8px;border:none;background:var(--accent);color:#000;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;height:40px;display:flex;align-items:center;gap:7px}
+.analyze-btn:hover{background:#ffa726}
+.analyze-btn:disabled{opacity:.3;pointer-events:none}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+.sum-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px}
+.sum-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sum-icon.purple{background:rgba(167,139,250,.12)}
+.sum-icon.red{background:rgba(248,113,113,.12)}
+.sum-icon.yellow{background:rgba(251,191,36,.12)}
+.sum-icon.green{background:rgba(74,222,128,.12)}
+.sum-num{font-size:26px;font-weight:800;line-height:1;font-family:var(--mono)}
+.sum-num.purple{color:var(--purple)}
+.sum-num.red{color:var(--red)}
+.sum-num.yellow{color:var(--yellow)}
+.sum-num.green{color:var(--green)}
+.sum-lbl{font-size:12px;color:var(--text2);margin-top:3px}
+.filter-row{display:flex;align-items:center;gap:8px;margin-bottom:26px;flex-wrap:wrap}
+.filter-btn{padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;font-family:var(--font)}
+.filter-btn:hover{border-color:var(--border2);color:var(--text);background:var(--s2)}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(255,183,77,.08);font-weight:700}
+.fbadge{background:var(--s2);border-radius:4px;font-size:11px;padding:1px 7px;font-family:var(--mono);font-weight:600}
+.search-wrap{position:relative;margin-left:auto}
+.search-input{background:var(--s1);border:1px solid var(--border);color:var(--text);padding:7px 12px 7px 32px;border-radius:8px;font-size:13px;font-family:var(--mono);outline:none;width:220px;transition:border-color .15s}
+.search-input:focus{border-color:var(--accent)}
+.search-ico{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text3);pointer-events:none}
+.section{margin-bottom:32px}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sec-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sec-dot.purple{background:var(--purple);box-shadow:0 0 7px var(--purple)}
+.sec-dot.red{background:var(--red);box-shadow:0 0 7px var(--red)}
+.sec-dot.yellow{background:var(--yellow);box-shadow:0 0 7px var(--yellow)}
+.sec-dot.green{background:var(--green);box-shadow:0 0 7px var(--green)}
+.sec-title{font-size:14px;font-weight:700}
+.sec-badge{font-size:11px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:5px}
+.sec-badge.purple{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+.sec-badge.red{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.sec-badge.yellow{background:rgba(251,191,36,.1);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
+.sec-badge.green{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+.sec-sub{font-size:12px;color:var(--text3);margin-left:auto}
+.item{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:7px;transition:border-color .15s}
+.item:hover{border-color:var(--border2)}
+.item-top{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.badge{font-size:10px;font-weight:700;font-family:var(--mono);letter-spacing:.06em;padding:3px 8px;border-radius:4px;text-transform:uppercase;flex-shrink:0;margin-top:1px}
+.badge.renamed{background:rgba(167,139,250,.12);color:var(--purple);border:1px solid rgba(167,139,250,.25)}
+.badge.maybe{background:rgba(96,165,250,.12);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
+.badge.removed{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.25)}
+.badge.changed{background:rgba(251,191,36,.12);color:var(--yellow);border:1px solid rgba(251,191,36,.25)}
+.item-keys{display:flex;flex-direction:column;gap:5px;flex:1;min-width:0}
+.key-row{display:flex;align-items:center;gap:8px}
+.key-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;width:28px;flex-shrink:0}
+.key-v{font-family:var(--mono);font-size:13px;font-weight:600;word-break:break-all}
+.key-v.old{color:var(--red);text-decoration:line-through;opacity:.75}
+.key-v.new{color:var(--green)}
+.key-v.plain{color:var(--text)}
+.item-defs{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+.def-pill{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:12px}
+.def-lbl{color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.def-v{background:var(--s2);border:1px solid var(--border2);padding:2px 9px;border-radius:5px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.def-v.old{color:var(--red);border-color:rgba(248,113,113,.2)}
+.def-v.new{color:var(--green);border-color:rgba(74,222,128,.2)}
+.def-v.neu{color:var(--text2)}
+.arr{color:var(--text3);font-size:13px;flex-shrink:0}
+.item-hint{font-size:11px;color:var(--text3);margin-top:7px;line-height:1.5}
+.item-hint .hl{color:var(--text2)}
+.nf-wrap{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.nf-table{width:100%;border-collapse:collapse}
+.nf-table th{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);font-family:var(--mono);padding:9px 16px;text-align:left;border-bottom:1px solid var(--border);background:var(--s2)}
+.nf-table td{padding:9px 16px;font-family:var(--mono);font-size:12px;border-bottom:1px solid rgba(38,42,53,.6)}
+.nf-table tr:last-child td{border-bottom:none}
+.nf-table tr:hover td{background:var(--s2)}
+.nf-key{color:var(--green);font-weight:500;word-break:break-all}
+.nf-val{color:var(--text2);max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty-sec{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:20px 18px;font-size:13px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:10px}
+.empty-sec::before{content:'✓';color:var(--green);font-size:16px}
+.loading{display:none;flex-direction:column;align-items:center;gap:14px;padding:80px;color:var(--text2);font-family:var(--mono);font-size:13px}
+.spin{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#results{display:none}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:12px;font-family:var(--mono);color:var(--text);box-shadow:0 4px 24px rgba(0,0,0,.5);transform:translateY(60px);opacity:0;transition:all .25s;z-index:1000}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
+#toast.ok{border-color:rgba(74,222,128,.4);color:var(--green)}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/diff" class="logo">⎈ skew<span class="logo-accent">log</span></a>
+  <div class="nav-links">
+    <a href="/diff" class="nav-link">Diff</a>
+    <a href="/advisor" class="nav-link active">Advisor</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-title">Upgrade Advisor</div>
+  <p class="page-sub">Compares the upstream <code style="font-family:var(--mono);color:var(--accent)">values.yaml</code> between two versions — detects renamed keys, removed keys, new options, and default shifts. Uses data already cached in the DB.</p>
+
+  <div class="setup-card">
+    <div class="setup-row">
+      <div class="fg">
+        <label class="flabel">Chart</label>
+        <select id="repoSel" onchange="onRepoChange()"><option value="">Select chart…</option></select>
+      </div>
+      <div class="fg">
+        <label class="flabel">From (your current)</label>
+        <select id="fromSel" disabled><option value="">—</option></select>
+      </div>
+      <div class="fg">
+        <label class="flabel">To (target version)</label>
+        <select id="toSel" disabled onchange="checkReady()"><option value="">—</option></select>
+      </div>
+      <button class="analyze-btn" id="analyzeBtn" onclick="runAnalysis()" disabled>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Analyze
+      </button>
+    </div>
+  </div>
+
+  <div class="loading" id="loadingState">
+    <div class="spin"></div><span>Comparing values.yaml between versions…</span>
+  </div>
+
+  <div id="results">
+    <div class="summary-grid">
+      <div class="sum-card"><div class="sum-icon purple">⇄</div><div><div class="sum-num purple" id="sumRenamed">0</div><div class="sum-lbl">Renamed / Moved</div></div></div>
+      <div class="sum-card"><div class="sum-icon red">✕</div><div><div class="sum-num red" id="sumRemoved">0</div><div class="sum-lbl">Removed Keys</div></div></div>
+      <div class="sum-card"><div class="sum-icon yellow">⇅</div><div><div class="sum-num yellow" id="sumChanged">0</div><div class="sum-lbl">Default Changes</div></div></div>
+      <div class="sum-card"><div class="sum-icon green">+</div><div><div class="sum-num green" id="sumAdded">0</div><div class="sum-lbl">New Keys</div></div></div>
+    </div>
+
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all"    onclick="setFilter('all')">All</button>
+      <button class="filter-btn" data-filter="renamed" onclick="setFilter('renamed')">Renamed <span class="fbadge" id="fbRenamed">0</span></button>
+      <button class="filter-btn" data-filter="removed" onclick="setFilter('removed')">Removed <span class="fbadge" id="fbRemoved">0</span></button>
+      <button class="filter-btn" data-filter="changed" onclick="setFilter('changed')">Defaults <span class="fbadge" id="fbChanged">0</span></button>
+      <button class="filter-btn" data-filter="added"   onclick="setFilter('added')">New <span class="fbadge" id="fbAdded">0</span></button>
+      <div class="search-wrap">
+        <svg class="search-ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="searchInput" placeholder="Search keys… (Ctrl+F)" oninput="applySearch()">
+      </div>
+    </div>
+
+    <div class="section" id="secRenamed">
+      <div class="sec-hdr"><div class="sec-dot purple"></div><span class="sec-title">Renamed / Restructured Keys</span><span class="sec-badge purple" id="badgeRenamed">0</span><span class="sec-sub">Key path changed — update your overrides</span></div>
+      <div id="renamedList"></div>
+    </div>
+    <div class="section" id="secRemoved">
+      <div class="sec-hdr"><div class="sec-dot red"></div><span class="sec-title">Removed Keys</span><span class="sec-badge red" id="badgeRemoved">0</span><span class="sec-sub">No longer configurable in the target version</span></div>
+      <div id="removedList"></div>
+    </div>
+    <div class="section" id="secChanged">
+      <div class="sec-hdr"><div class="sec-dot yellow"></div><span class="sec-title">Default Value Changes</span><span class="sec-badge yellow" id="badgeChanged">0</span><span class="sec-sub">Same key, different upstream default</span></div>
+      <div id="changedList"></div>
+    </div>
+    <div class="section" id="secAdded">
+      <div class="sec-hdr"><div class="sec-dot green"></div><span class="sec-title">New Keys</span><span class="sec-badge green" id="badgeAdded">0</span><span class="sec-sub">New configuration options in the target version</span></div>
+      <div class="nf-wrap"><table class="nf-table"><thead><tr><th>Key</th><th>Default Value</th></tr></thead><tbody id="addedList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+let R = null;
+
+async function boot() {
+  const repos = await fetch('/api/repos').then(r => r.json());
+  const sel = document.getElementById('repoSel');
+  repos.forEach(r => sel.appendChild(new Option(r.name, r.name)));
+}
+
+async function onRepoChange() {
+  const name = document.getElementById('repoSel').value;
+  if (!name) return;
+  const fromSel = document.getElementById('fromSel');
+  const toSel   = document.getElementById('toSel');
+  fromSel.innerHTML = '<option value="">—</option>';
+  toSel.innerHTML   = '<option value="">—</option>';
+  fromSel.disabled = toSel.disabled = true;
+
+  const d = await fetch(`/api/repos/${name}/versions`).then(r => r.json());
+  if (d.error) { toast(d.error, 'err'); return; }
+
+  const versions = d.versions || [];
+  const latest = d.latest;
+  versions.forEach(v => {
+    const isLatest = v.version === latest;
+    const brk = v.has_breaking_changes ? ' ⚠' : '';
+    toSel.appendChild(new Option((isLatest ? v.version + ' (latest)' : v.version) + brk, v.version));
+    if (!isLatest) fromSel.appendChild(new Option(v.version + brk, v.version));
+  });
+  if (latest) {
+    toSel.value = latest;
+    const idx = versions.findIndex(v => v.version === latest);
+    if (idx + 1 < versions.length) fromSel.value = versions[idx + 1].version;
+  }
+  fromSel.disabled = toSel.disabled = false;
+  checkReady();
+}
+
+function checkReady() {
+  const f = document.getElementById('fromSel').value;
+  const t = document.getElementById('toSel').value;
+  document.getElementById('analyzeBtn').disabled = !(f && t && f !== t);
+}
+
+async function runAnalysis() {
+  const repo = document.getElementById('repoSel').value;
+  const from = document.getElementById('fromSel').value;
+  const to   = document.getElementById('toSel').value;
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('loadingState').style.display = 'flex';
+
+  const res = await fetch('/api/advisor/analyze', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({repo, from, to})
+  });
+  document.getElementById('loadingState').style.display = 'none';
+
+  if (!res.ok) { const e = await res.json().catch(()=>({})); toast(e.error || 'Failed', 'err'); return; }
+  R = await res.json();
+  render();
+}
+
+function render() {
+  const renamed = R.renamed || [], removed = R.removed || [], changed = R.changed || [], added = R.added || [];
+
+  [['sumRenamed','fbRenamed','badgeRenamed',renamed.length],
+   ['sumRemoved','fbRemoved','badgeRemoved',removed.length],
+   ['sumChanged','fbChanged','badgeChanged',changed.length],
+   ['sumAdded',  'fbAdded',  'badgeAdded',  added.length]
+  ].forEach(([s,f,b,n]) => { document.getElementById(s).textContent=n; document.getElementById(f).textContent=n; document.getElementById(b).textContent=n; });
+
+  // Renamed
+  const rl = document.getElementById('renamedList');
+  rl.innerHTML = renamed.length ? '' : '<div class="empty-sec">No renamed keys detected</div>';
+  renamed.forEach(item => {
+    const high = item.confidence === 'high';
+    const alts = item.alternatives?.length ? `<br>Other candidates: <span class="hl">${esc(item.alternatives.join(', '))}</span>` : '';
+    rl.innerHTML += `<div class="item" data-key="${esc(item.old_key+' '+item.new_key)}">
+      <div class="item-top">
+        <span class="badge ${high?'renamed':'maybe'}">${high?'⇄ Renamed':'~ Maybe renamed'}</span>
+        <div class="item-keys">
+          <div class="key-row"><span class="key-lbl">was</span><span class="key-v old">${esc(item.old_key)}</span></div>
+          <div class="key-row"><span class="key-lbl">now</span><span class="key-v new">${esc(item.new_key)}</span></div>
+        </div>
+        <div class="item-defs">
+          <div class="def-pill"><span class="def-lbl">old default</span><span class="def-v old">${esc(t(item.old_default))}</span></div>
+          <span class="arr">→</span>
+          <div class="def-pill"><span class="def-lbl">new default</span><span class="def-v new">${esc(t(item.new_default))}</span></div>
+        </div>
+      </div>
+      <div class="item-hint">Update your <span class="hl">values.yaml</span> to use the new key path.${alts}</div>
+    </div>`;
+  });
+
+  // Removed
+  const reml = document.getElementById('removedList');
+  reml.innerHTML = removed.length ? '' : '<div class="empty-sec">No removed keys</div>';
+  removed.forEach(item => {
+    reml.innerHTML += `<div class="item" data-key="${esc(item.key)}">
+      <div class="item-top">
+        <span class="badge removed">✕ Removed</span>
+        <div class="item-keys"><div class="key-row"><span class="key-v old">${esc(item.key)}</span></div></div>
+        <div class="item-defs"><div class="def-pill"><span class="def-lbl">was default</span><span class="def-v old">${esc(t(item.old_default))}</span></div></div>
+      </div>
+      <div class="item-hint">This key no longer exists in the upstream chart.</div>
+    </div>`;
+  });
+
+  // Changed defaults
+  const cl = document.getElementById('changedList');
+  cl.innerHTML = changed.length ? '' : '<div class="empty-sec">No default value changes</div>';
+  changed.forEach(item => {
+    cl.innerHTML += `<div class="item" data-key="${esc(item.key)}">
+      <div class="item-top">
+        <span class="badge changed">⇅ Default</span>
+        <div class="item-keys"><div class="key-row"><span class="key-v plain">${esc(item.key)}</span></div></div>
+        <div class="item-defs">
+          <div class="def-pill"><span class="def-lbl">old</span><span class="def-v old">${esc(t(item.old_default))}</span></div>
+          <span class="arr">→</span>
+          <div class="def-pill"><span class="def-lbl">new</span><span class="def-v new">${esc(t(item.new_default))}</span></div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // New keys
+  const al = document.getElementById('addedList');
+  al.innerHTML = '';
+  if (!added.length) {
+    document.querySelector('.nf-wrap').innerHTML = '<div class="empty-sec" style="border:none;border-radius:0;padding:20px 16px">No new keys added</div>';
+  } else {
+    added.forEach(item => {
+      al.innerHTML += `<tr data-key="${esc(item.key)}"><td class="nf-key">${esc(item.key)}</td><td class="nf-val">${esc(t(item.new_default))}</td></tr>`;
+    });
+  }
+
+  setFilter('all');
+  document.getElementById('results').style.display = 'block';
+  window.scrollTo({top: document.getElementById('results').offsetTop - 20, behavior: 'smooth'});
+}
+
+function setFilter(f) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  ['Renamed','Removed','Changed','Added'].forEach(n => {
+    document.getElementById('sec'+n).style.display = (f==='all'||f===n.toLowerCase()) ? '' : 'none';
+  });
+}
+
+function applySearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.item[data-key]').forEach(el => {
+    el.style.display = el.dataset.key.toLowerCase().includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('#addedList tr[data-key]').forEach(el => {
+    el.style.display = el.dataset.key.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') { e.preventDefault(); document.getElementById('searchInput').focus(); }
+});
+
+const t = (s, n=60) => { const str = String(s ?? ''); return str.length > n ? str.slice(0, n) + '…' : str; };
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function toast(msg, type='') { const el = document.getElementById('toast'); el.textContent = msg; el.className = 'show ' + type; setTimeout(() => el.className = '', 3500); }
+
+boot();
+</script>
+</body>
+</html>
