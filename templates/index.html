@@ -3,702 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Helm Diff — SRE</title>
+<title>skewlog</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0b0d;
-    --surface: #111318;
-    --surface2: #171a20;
-    --surface3: #1e2028;
-    --border: #2a2d38;
-    --border2: #363944;
-    --text: #e2e4ec;
-    --text2: #8b8fa8;
-    --text3: #555970;
-    --accent: #5b8af5;
-    --accent2: #7c9eff;
-    --green: #3ecf8e;
-    --red: #f4615c;
-    --yellow: #f5a524;
-    --orange: #ff7b24;
-    --purple: #9b7fe8;
-    --cyan: #38bdf8;
-    --add-bg: rgba(62, 207, 142, 0.07);
-    --del-bg: rgba(244, 97, 92, 0.07);
-    --add-line: rgba(62, 207, 142, 0.4);
-    --del-line: rgba(244, 97, 92, 0.4);
-    --header-h: 56px;
-  }
+:root {
+  --bg:#0d0f12; --s1:#13161c; --s2:#191c24; --s3:#1f232e;
+  --border:#272b38; --border2:#30354a;
+  --text:#d4d8e8; --text2:#7b82a0; --text3:#454a62;
+  --accent:#4f8ef7; --green:#34d399; --red:#f87171; --yellow:#fbbf24;
+  --add-bg:rgba(52,211,153,.06); --del-bg:rgba(248,113,113,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13px;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* TOPBAR */
+.topbar{height:52px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:14px;flex-shrink:0}
+.logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px;color:var(--text);letter-spacing:-.5px;display:flex;align-items:center;gap:8px;margin-right:4px}
+.logo-dot{color:var(--accent)}
+.vdivider{width:1px;height:24px;background:var(--border);flex-shrink:0}
+.field{display:flex;align-items:center;gap:8px}
+.field-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;white-space:nowrap}
+select{background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 28px 6px 10px;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23454a62' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;transition:border-color .15s;min-width:160px}
+select:focus{outline:none;border-color:var(--accent)}
+select:hover{border-color:var(--border2)}
+.v-old{border-color:rgba(248,113,113,.35)!important}
+.v-old:focus{border-color:var(--red)!important}
+.v-new{border-color:rgba(52,211,153,.35)!important}
+.v-new:focus{border-color:var(--green)!important}
+.arrow-icon{color:var(--text3);font-size:18px;flex-shrink:0}
+.ml-auto{margin-left:auto}
+.btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--s2);color:var(--text2);font-size:12px;font-family:'IBM Plex Sans',sans-serif;font-weight:500;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--s3);color:var(--text);border-color:var(--border2)}
+.btn-cmp{background:var(--accent)!important;border-color:var(--accent)!important;color:#fff!important;font-weight:600!important}
+.btn-cmp:hover{background:#6ba0ff!important;border-color:#6ba0ff!important}
+.btn:disabled{opacity:.4;pointer-events:none}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+/* STATS BAR */
+.statsbar{height:32px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:18px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2)}
+.stat{display:flex;align-items:center;gap:5px}
+.stat-val{color:var(--text)}
+.stat-val.g{color:var(--green)}
+.stat-val.r{color:var(--red)}
+.stat-val.y{color:var(--yellow)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
 
-  /* ── HEADER ── */
-  header {
-    height: var(--header-h);
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 16px;
-    flex-shrink: 0;
-    position: relative;
-    z-index: 100;
-  }
+/* FILE TABS */
+.filetabs{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 20px;gap:2px;flex-shrink:0;overflow-x:auto;min-height:36px}
+.filetabs::-webkit-scrollbar{height:3px}
+.filetabs::-webkit-scrollbar-thumb{background:var(--border2)}
+.ftab{padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);cursor:pointer;border-radius:5px 5px 0 0;border:1px solid transparent;border-bottom:none;white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:6px;position:relative;bottom:-1px}
+.ftab:hover{color:var(--text2);background:var(--s2)}
+.ftab.active{color:var(--text);background:var(--bg);border-color:var(--border);border-bottom-color:var(--bg)}
+.ftab-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ftab-dot.modified{background:var(--accent)}
+.ftab-dot.added{background:var(--green)}
+.ftab-dot.removed{background:var(--red)}
+.ftab-dot.unchanged{background:var(--text3)}
 
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-right: 8px;
-  }
-  .logo-icon {
-    width: 28px; height: 28px;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
-    border-radius: 7px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px;
-  }
-  .logo-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 700;
-    font-size: 15px;
-    color: var(--text);
-    letter-spacing: -0.3px;
-  }
-  .logo-sub {
-    font-size: 11px;
-    color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-    margin-top: 1px;
-  }
+/* WORKSPACE */
+.workspace{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
-  .sep { width: 1px; height: 28px; background: var(--border); flex-shrink: 0; }
+/* SIDE BY SIDE */
+.diff-pane{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;min-height:0}
+.diff-side{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
+.diff-side:last-child{border-right:none}
+.diff-side-header{padding:8px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sv-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
+.sv-ver{font-weight:600;font-size:12px}
+.sv-ver.old{color:var(--red)}
+.sv-ver.new{color:var(--green)}
+.sv-changes{margin-left:auto;font-size:11px}
+.diff-code{flex:1;overflow-y:auto;overflow-x:auto}
+.diff-code::-webkit-scrollbar{width:5px;height:5px}
+.diff-code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-  .repo-selector-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    max-width: 440px;
-  }
-  .repo-selector-label {
-    font-size: 12px;
-    color: var(--text3);
-    white-space: nowrap;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 32px 7px 12px;
-    border-radius: 7px;
-    font-size: 13px;
-    font-family: 'JetBrains Mono', monospace;
-    cursor: pointer;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b8fa8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    transition: border-color 0.2s;
-    min-width: 240px;
-  }
-  select:focus { outline: none; border-color: var(--accent); }
-  select:hover { border-color: var(--border2); }
+table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.55}
+.ct td{padding:1px 0;vertical-align:top;white-space:pre}
+.ct .ln{color:var(--text3);text-align:right;min-width:44px;padding-right:12px;padding-left:8px;user-select:none;border-right:1px solid var(--border)}
+.ct .code{padding-left:12px;padding-right:16px;color:var(--text2)}
+.ct tr.add{background:var(--add-bg)}
+.ct tr.add .ln{color:var(--green);border-right-color:rgba(52,211,153,.2)}
+.ct tr.add .code{color:#6ee7b7}
+.ct tr.del{background:var(--del-bg)}
+.ct tr.del .ln{color:var(--red);border-right-color:rgba(248,113,113,.2)}
+.ct tr.del .code{color:#fca5a5}
+.ct tr.hunk .code{color:var(--accent);background:rgba(79,142,247,.05)}
+.ct tr.hunk .ln{color:var(--accent)}
+.ct tr.ctx .code{color:var(--text2)}
 
-  .header-actions { display: flex; gap: 8px; margin-left: auto; }
+/* NEW VALUES PANEL */
+.nv-panel{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;display:flex;flex-direction:column;max-height:200px}
+.nv-header{padding:9px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;flex-shrink:0}
+.nv-title{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.07em}
+.nv-badge{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:var(--green);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:1px 7px;border-radius:3px}
+.nv-desc{font-size:11px;color:var(--text3);margin-left:auto}
+.nv-body{overflow-y:auto;padding:12px 20px;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start}
+.nv-body::-webkit-scrollbar{width:4px}
+.nv-body::-webkit-scrollbar-thumb{background:var(--border2)}
+.nv-chip{background:var(--s2);border:1px solid rgba(52,211,153,.18);border-radius:5px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;flex-direction:column;gap:3px;max-width:260px;transition:border-color .15s;cursor:default}
+.nv-chip:hover{border-color:rgba(52,211,153,.45)}
+.nv-key{color:var(--green);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nv-val{color:var(--text3);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-  .btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 7px 14px;
-    border-radius: 7px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text2);
-    font-size: 12px;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
-  .btn.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
-  .btn.loading { opacity: 0.6; pointer-events: none; }
-  .btn svg { flex-shrink: 0; }
+/* EMPTY & LOADING */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--text3)}
+.empty-icon{font-size:38px;opacity:.25}
+.empty h2{font-size:16px;font-weight:500;color:var(--text2)}
+.empty p{font-size:13px;text-align:center;max-width:300px;line-height:1.7;color:var(--text2)}
+.empty-steps{display:flex;flex-direction:column;gap:6px;text-align:left;margin-top:4px}
+.empty-steps li{display:flex;align-items:center;gap:8px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text2);list-style:none}
+.step-n{width:18px;height:18px;border-radius:50%;background:var(--s2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent);flex-shrink:0}
+.loading-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;font-size:12px}
+.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  .last-checked { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+/* TOAST */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text);box-shadow:0 4px 24px rgba(0,0,0,.5);transform:translateY(60px);opacity:0;transition:all .25s ease;z-index:1000}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-color:rgba(52,211,153,.4);color:var(--green)}
+#toast.err{border-color:rgba(248,113,113,.4);color:var(--red)}
 
-  /* ── STATUS BAR ── */
-  .status-bar {
-    height: 30px; flex-shrink: 0;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center;
-    padding: 0 20px; gap: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px; color: var(--text3);
-  }
-  .status-item { display: flex; align-items: center; gap: 5px; }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text3); }
-  .status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
-  .status-dot.yellow { background: var(--yellow); }
-  .status-dot.red { background: var(--red); }
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:200;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:10px;width:460px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.6);transform:scale(.96);transition:transform .2s}
+.overlay.open .modal{transform:scale(1)}
+.modal-title{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;margin-bottom:20px;color:var(--text)}
+.fg{margin-bottom:13px}
+.flabel{display:block;font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.finput{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:7px 11px;border-radius:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;transition:border-color .15s}
+.finput:focus{outline:none;border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 
-  /* ── MAIN LAYOUT ── */
-  .main {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* ── SIDEBAR ── */
-  .sidebar {
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .sidebar-header {
-    padding: 14px 16px 10px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .sidebar-title {
-    font-size: 11px;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .version-search {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    width: 100%;
-    transition: border-color 0.2s;
-  }
-  .version-search:focus { outline: none; border-color: var(--accent); }
-  .version-search::placeholder { color: var(--text3); }
-
-  .versions-list { overflow-y: auto; flex: 1; padding: 8px 0; }
-  .versions-list::-webkit-scrollbar { width: 4px; }
-  .versions-list::-webkit-scrollbar-track { background: transparent; }
-  .versions-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-  .version-item {
-    display: flex;
-    align-items: center;
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: background 0.1s;
-    gap: 10px;
-    border-left: 2px solid transparent;
-  }
-  .version-item:hover { background: var(--surface2); }
-  .version-item.active {
-    background: rgba(91, 138, 245, 0.08);
-    border-left-color: var(--accent);
-  }
-  .version-tag {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    color: var(--text);
-    flex: 1;
-  }
-  .version-date {
-    font-size: 11px;
-    color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .breaking-badge {
-    display: flex; align-items: center; gap: 3px;
-    background: rgba(245, 165, 36, 0.15);
-    border: 1px solid rgba(245, 165, 36, 0.3);
-    color: var(--yellow);
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-  }
-  .latest-badge {
-    background: rgba(91, 138, 245, 0.15);
-    border: 1px solid rgba(91, 138, 245, 0.3);
-    color: var(--accent);
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-family: 'JetBrains Mono', monospace;
-    flex-shrink: 0;
-  }
-  .sidebar-empty {
-    padding: 20px 16px;
-    color: var(--text3);
-    font-size: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    text-align: center;
-  }
-
-  /* ── RIGHT PANEL ── */
-  .panel {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* ── DIFF HEADER ── */
-  .diff-header {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-shrink: 0;
-  }
-  .diff-versions {
-    display: flex; align-items: center; gap: 10px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-  .diff-v-tag {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .diff-v-tag.from { color: var(--red); }
-  .diff-v-tag.to { color: var(--green); }
-  .diff-arrow { color: var(--text3); font-size: 12px; }
-
-  .diff-stats { display: flex; gap: 12px; margin-left: auto; }
-  .stat-pill {
-    display: flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 20px;
-    font-family: 'JetBrains Mono', monospace; font-size: 12px;
-  }
-  .stat-pill.files { background: rgba(91,138,245,0.1); color: var(--accent); }
-  .stat-pill.add { background: rgba(62,207,142,0.1); color: var(--green); }
-  .stat-pill.del { background: rgba(244,97,92,0.1); color: var(--red); }
-
-  /* ── TABS ── */
-  .tabs {
-    display: flex; gap: 2px;
-    padding: 10px 20px 0;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .tab {
-    padding: 7px 14px;
-    border-radius: 6px 6px 0 0;
-    font-size: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--text3);
-    cursor: pointer;
-    border: 1px solid transparent;
-    border-bottom: none;
-    transition: all 0.15s;
-    display: flex; align-items: center; gap: 6px;
-    background: transparent;
-    position: relative; bottom: -1px;
-  }
-  .tab:hover { color: var(--text2); background: var(--surface2); }
-  .tab.active {
-    color: var(--text);
-    background: var(--surface3);
-    border-color: var(--border);
-    border-bottom-color: var(--surface3);
-  }
-  .tab-badge {
-    background: rgba(244,97,92,0.15);
-    color: var(--red);
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 3px;
-  }
-
-  /* ── CONTENT AREA ── */
-  .content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    background: var(--surface3);
-  }
-  .content::-webkit-scrollbar { width: 6px; }
-  .content::-webkit-scrollbar-track { background: transparent; }
-  .content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-  /* ── WELCOME STATE ── */
-  .welcome {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    height: 100%;
-    gap: 16px;
-    color: var(--text3);
-  }
-  .welcome-icon { font-size: 48px; opacity: 0.4; }
-  .welcome h2 { font-size: 18px; color: var(--text2); font-weight: 500; }
-  .welcome p { font-size: 13px; text-align: center; max-width: 320px; line-height: 1.6; }
-  .welcome-steps { list-style: none; display: flex; flex-direction: column; gap: 8px; text-align: left; }
-  .welcome-steps li {
-    display: flex; align-items: center; gap: 8px; font-size: 12px;
-    font-family: 'JetBrains Mono', monospace; color: var(--text3);
-  }
-  .step-num {
-    width: 20px; height: 20px; border-radius: 50%;
-    background: var(--surface2); border: 1px solid var(--border2);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 10px; color: var(--accent); flex-shrink: 0;
-  }
-
-  /* ── FILE DIFF VIEW ── */
-  .file-diffs { display: flex; flex-direction: column; gap: 16px; }
-
-  .file-diff {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    background: var(--surface);
-  }
-  .file-diff-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 16px;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .file-diff-header:hover { background: var(--surface3); }
-  .file-status {
-    font-size: 10px; padding: 2px 7px; border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace; flex-shrink: 0;
-  }
-  .file-status.modified { background: rgba(91,138,245,0.15); color: var(--accent); }
-  .file-status.added { background: rgba(62,207,142,0.15); color: var(--green); }
-  .file-status.removed { background: rgba(244,97,92,0.15); color: var(--red); }
-  .file-status.unchanged { background: rgba(85,89,112,0.2); color: var(--text3); }
-  .file-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--text); flex: 1;
-  }
-  .file-changes { display: flex; gap: 8px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
-  .file-add { color: var(--green); }
-  .file-del { color: var(--red); }
-  .collapse-icon { color: var(--text3); font-size: 11px; transition: transform 0.2s; }
-  .collapsed .collapse-icon { transform: rotate(-90deg); }
-
-  .diff-body { overflow-x: auto; }
-  .diff-body.hidden { display: none; }
-
-  table.diff-table { width: 100%; border-collapse: collapse; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .diff-table td { padding: 1px 12px; white-space: pre; vertical-align: top; line-height: 1.5; }
-  .diff-table .ln { color: var(--text3); text-align: right; min-width: 40px; user-select: none; border-right: 1px solid var(--border); padding-right: 8px; }
-  .diff-table tr.add td { background: var(--add-bg); }
-  .diff-table tr.add td.ln { background: rgba(62,207,142,0.1); color: var(--green); border-right-color: var(--add-line); }
-  .diff-table tr.add .code { color: var(--green); }
-  .diff-table tr.del td { background: var(--del-bg); }
-  .diff-table tr.del td.ln { background: rgba(244,97,92,0.1); color: var(--red); border-right-color: var(--del-line); }
-  .diff-table tr.del .code { color: var(--red); }
-  .diff-table tr.hunk td { background: rgba(91,138,245,0.05); color: var(--accent2); }
-  .diff-table tr.ctx .code { color: var(--text2); }
-
-  /* ── RELEASE NOTES ── */
-  .release-notes-wrap { display: flex; flex-direction: column; gap: 16px; }
-  .release-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .release-card-header {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-  }
-  .release-card-version {
-    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: var(--text);
-    flex: 1;
-  }
-  .release-card-body { padding: 16px; }
-  .release-notes-text {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--text2);
-    line-height: 1.7; white-space: pre-wrap;
-    max-height: 300px; overflow-y: auto;
-  }
-  .release-notes-text::-webkit-scrollbar { width: 4px; }
-  .release-notes-text::-webkit-scrollbar-thumb { background: var(--border2); }
-
-  .breaking-alert {
-    background: rgba(245,165,36,0.08);
-    border: 1px solid rgba(245,165,36,0.25);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
-  }
-  .breaking-alert-title {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 600; color: var(--yellow);
-    margin-bottom: 8px; font-family: 'JetBrains Mono', monospace;
-  }
-  .breaking-alert-content {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px; color: var(--text2);
-    line-height: 1.6; white-space: pre-wrap;
-  }
-  .no-notes { color: var(--text3); font-size: 12px; font-family: 'JetBrains Mono', monospace; }
-
-  /* ── BETWEEN VERSIONS LIST ── */
-  .between-versions { display: flex; flex-direction: column; gap: 6px; }
-  .between-version-row {
-    display: flex; align-items: flex-start; gap: 12px;
-    padding: 10px 14px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-  .bv-version { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text); width: 100px; flex-shrink: 0; }
-  .bv-notes { font-size: 12px; color: var(--text3); line-height: 1.5; flex: 1; }
-  .bv-notes a { color: var(--accent); text-decoration: none; }
-  .bv-notes a:hover { text-decoration: underline; }
-
-  /* ── SPINNER ── */
-  .spinner {
-    display: inline-block; width: 14px; height: 14px;
-    border: 2px solid rgba(255,255,255,0.1);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loading-overlay {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; height: 200px; gap: 12px;
-    color: var(--text3); font-size: 12px; font-family: 'JetBrains Mono', monospace;
-  }
-
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 20px; right: 20px;
-    background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 16px;
-    font-size: 12px; font-family: 'JetBrains Mono', monospace;
-    color: var(--text); box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    transform: translateY(80px); opacity: 0;
-    transition: all 0.3s ease; z-index: 1000;
-    max-width: 360px;
-  }
-  #toast.show { transform: translateY(0); opacity: 1; }
-  #toast.success { border-color: rgba(62,207,142,0.4); color: var(--green); }
-  #toast.error { border-color: rgba(244,97,92,0.4); color: var(--red); }
-
-  /* ── ADD REPO MODAL ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200; backdrop-filter: blur(4px);
-    opacity: 0; pointer-events: none; transition: opacity 0.2s;
-  }
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border2);
-    border-radius: 12px; width: 480px;
-    padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    transform: scale(0.95); transition: transform 0.2s;
-  }
-  .modal-overlay.open .modal { transform: scale(1); }
-  .modal-title {
-    font-size: 16px; font-weight: 600; color: var(--text);
-    margin-bottom: 20px; font-family: 'JetBrains Mono', monospace;
-  }
-  .form-group { margin-bottom: 14px; }
-  .form-label {
-    display: block; font-size: 11px; color: var(--text3);
-    font-family: 'JetBrains Mono', monospace;
-    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.05em;
-  }
-  .form-input {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 8px 12px;
-    border-radius: 7px;
-    font-size: 13px;
-    font-family: 'JetBrains Mono', monospace;
-    transition: border-color 0.2s;
-  }
-  .form-input:focus { outline: none; border-color: var(--accent); }
-  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
-
-  /* scrollbar global */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 </style>
 </head>
 <body>
 
-<!-- ── HEADER ───────────────────────────────────────────────────────────────── -->
-<header>
-  <div class="logo">
-    <div class="logo-icon">⚓</div>
-    <div>
-      <div class="logo-text">helm-diff</div>
-      <div class="logo-sub">SRE Chart Tracker</div>
-    </div>
-  </div>
-  <div class="sep"></div>
-  <div class="repo-selector-wrap">
-    <span class="repo-selector-label">repo://</span>
-    <select id="repoSelect" onchange="onRepoChange()">
-      <option value="">— select a chart —</option>
+<div class="topbar">
+  <div class="logo">⎈ skew<span class="logo-dot">.</span>log</div>
+  <div class="vdivider"></div>
+  <div class="field">
+    <span class="field-label">chart</span>
+    <select id="repoSel" onchange="onRepoChange()">
+      <option value="">— select —</option>
     </select>
   </div>
-  <span class="last-checked" id="lastChecked"></span>
-  <div class="header-actions">
-    <button class="btn" onclick="openAddModal()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Add Repo
-    </button>
-    <button class="btn" id="syncBtn" onclick="syncRepo()">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+  <div class="vdivider"></div>
+  <div class="field">
+    <select class="v-old" id="fromSel" disabled onchange="checkReady()">
+      <option value="">current version</option>
+    </select>
+    <span class="arrow-icon">→</span>
+    <select class="v-new" id="toSel" disabled onchange="checkReady()">
+      <option value="">target version</option>
+    </select>
+  </div>
+  <div class="ml-auto" style="display:flex;gap:8px;align-items:center">
+    <button class="btn" onclick="syncRepo()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Sync
     </button>
-    <button class="btn btn-primary" id="compareBtn" onclick="runCompare()" style="display:none">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-      Compare
+    <button class="btn" onclick="openModal()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Chart
     </button>
-  </div>
-</header>
-
-<!-- ── STATUS BAR ────────────────────────────────────────────────────────────── -->
-<div class="status-bar">
-  <div class="status-item">
-    <div class="status-dot green" id="statusDot"></div>
-    <span id="statusText">ready</span>
-  </div>
-  <div class="status-item" id="versionCountStatus" style="display:none">
-    <span>versions: </span><span id="versionCount" style="color:var(--text2)">—</span>
-  </div>
-  <div class="status-item" id="latestStatus" style="display:none">
-    <span>latest: </span><span id="latestVersion" style="color:var(--green);font-weight:600">—</span>
-  </div>
-  <div class="status-item" id="diffSummaryStatus" style="display:none">
-    <span>diff: </span><span id="diffSummary" style="color:var(--text2)">—</span>
+    <button class="btn btn-cmp" id="compareBtn" onclick="runCompare()" disabled>Compare</button>
   </div>
 </div>
 
-<!-- ── MAIN ──────────────────────────────────────────────────────────────────── -->
-<div class="main">
+<div class="statsbar">
+  <div class="stat"><div class="dot"></div><span id="statusTxt">ready</span></div>
+  <div class="stat" id="sFiles" style="display:none"><span class="stat-val" id="sFilesV">—</span><span>files changed</span></div>
+  <div class="stat" id="sAdd"   style="display:none"><span class="stat-val g" id="sAddV">—</span><span>additions</span></div>
+  <div class="stat" id="sDel"   style="display:none"><span class="stat-val r" id="sDelV">—</span><span>deletions</span></div>
+  <div class="stat" id="sNew"   style="display:none"><span class="stat-val g" id="sNewV">—</span><span>new keys in values.yaml</span></div>
+  <div class="stat" id="sBrk"   style="display:none"><span class="stat-val y" id="sBrkV">—</span><span>versions with breaking changes</span></div>
+</div>
 
-  <!-- SIDEBAR -->
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">Versions
-        <span id="sidebarLatestBadge" style="display:none;margin-left:6px;font-size:10px;color:var(--green)"></span>
-      </div>
-      <input class="version-search" type="text" id="versionSearch"
-             placeholder="filter versions..." oninput="filterVersions()">
-    </div>
-    <div class="versions-list" id="versionsList">
-      <div class="sidebar-empty">Select a repository above to load versions.</div>
-    </div>
-  </div>
+<div class="filetabs" id="filetabs" style="display:none"></div>
 
-  <!-- RIGHT PANEL -->
-  <div class="panel">
-    <div class="diff-header" id="diffHeader" style="display:none">
-      <div class="diff-versions">
-        <span class="diff-v-tag from" id="dhFrom">—</span>
-        <span class="diff-arrow">──▶</span>
-        <span class="diff-v-tag to" id="dhTo">—</span>
-        <span style="font-size:11px;color:var(--text3);margin-left:4px;font-family:'JetBrains Mono',monospace">(latest)</span>
-      </div>
-      <div class="diff-stats" id="diffStats"></div>
-    </div>
-
-    <div class="tabs" id="tabBar" style="display:none">
-      <div class="tab active" onclick="switchTab('diff')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-        Diff
-        <span class="tab-badge" id="changedFilesCount" style="display:none"></span>
-      </div>
-      <div class="tab" onclick="switchTab('release-notes')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Release Notes
-        <span id="breakingTabBadge" style="display:none;background:rgba(245,165,36,0.15);color:var(--yellow);font-size:10px;padding:1px 5px;border-radius:3px">⚠️</span>
-      </div>
-      <div class="tab" onclick="switchTab('between')">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Between Versions
-      </div>
-    </div>
-
-    <div class="content" id="mainContent">
-      <div class="welcome">
-        <div class="welcome-icon">⎈</div>
-        <h2>Helm Chart Diff Tool</h2>
-        <p>Compare any two versions of a Helm chart, see file diffs and check for breaking changes.</p>
-        <ul class="welcome-steps">
-          <li><div class="step-num">1</div>Select a repository from the dropdown above</li>
-          <li><div class="step-num">2</div>Click a version on the left to compare from</li>
-          <li><div class="step-num">3</div>Hit Compare — diffs against latest automatically</li>
-        </ul>
-      </div>
-    </div>
+<div class="workspace" id="workspace">
+  <div class="empty">
+    <div class="empty-icon">⎈</div>
+    <h2>skewlog</h2>
+    <p>Before you upgrade, check the skew. Select a chart, set versions, compare.</p>
+    <ul class="empty-steps">
+      <li><div class="step-n">1</div>Choose a chart from the dropdown</li>
+      <li><div class="step-n">2</div>Set your current version <span style="color:var(--red)">←</span></li>
+      <li><div class="step-n">3</div>Set your target version <span style="color:var(--green)">→</span></li>
+      <li><div class="step-n">4</div>Hit Compare</li>
+    </ul>
   </div>
 </div>
 
-<!-- ── ADD REPO MODAL ─────────────────────────────────────────────────────── -->
-<div class="modal-overlay" id="addModal">
+<div class="overlay" id="modal">
   <div class="modal">
-    <div class="modal-title">Add Helm Repository</div>
-    <div class="form-group">
-      <label class="form-label">Name</label>
-      <input class="form-input" id="addName" placeholder="my-chart" type="text">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Helm Repo URL</label>
-      <input class="form-input" id="addHelmUrl" placeholder="https://charts.example.com" type="text">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Chart Name</label>
-      <input class="form-input" id="addChartName" placeholder="my-chart" type="text">
-    </div>
-    <div class="form-group">
-      <label class="form-label">GitHub Repo (for release notes)</label>
-      <input class="form-input" id="addGithubRepo" placeholder="org/repo" type="text">
-    </div>
+    <div class="modal-title">Add Helm Chart</div>
+    <div class="fg"><label class="flabel">Name</label><input class="finput" id="mName" placeholder="my-chart"></div>
+    <div class="fg"><label class="flabel">Helm Repo URL</label><input class="finput" id="mUrl" placeholder="https://charts.example.com"></div>
+    <div class="fg"><label class="flabel">Chart Name</label><input class="finput" id="mChart" placeholder="my-chart"></div>
+    <div class="fg"><label class="flabel">GitHub Repo (release notes)</label><input class="finput" id="mGh" placeholder="org/repo"></div>
     <div class="modal-actions">
-      <button class="btn" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitAddRepo()">Add Repository</button>
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-cmp" onclick="submitModal()">Add</button>
     </div>
   </div>
 </div>
@@ -706,485 +217,309 @@
 <div id="toast"></div>
 
 <script>
-// ── State ─────────────────────────────────────────────────────────────────────
-let state = {
-  selectedRepo: null,
-  versions: [],
-  latestVersion: null,
-  selectedFromVersion: null,
-  currentTab: 'diff',
-  diffData: null,
-  releaseNotesCache: {},
-};
+const S = { repo:null, versions:[], latest:null, diffData:null, currentFile:null, newKeys:[] };
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
-  await loadRepos();
-}
-
-async function loadRepos() {
-  const res = await fetch('/api/repos');
-  const repos = await res.json();
-  const sel = document.getElementById('repoSelect');
-  sel.innerHTML = '<option value="">— select a chart —</option>';
+async function boot() {
+  const repos = await fetch('/api/repos').then(r=>r.json());
+  const sel = document.getElementById('repoSel');
   repos.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r.name;
-    opt.textContent = r.name;
-    sel.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = r.name; o.textContent = r.name;
+    sel.appendChild(o);
   });
 }
 
-// ── Repo Change ───────────────────────────────────────────────────────────────
 async function onRepoChange() {
-  const repoName = document.getElementById('repoSelect').value;
-  if (!repoName) return;
+  const name = document.getElementById('repoSel').value;
+  if (!name) return;
+  S.repo = name; S.diffData = null;
+  setStatus('loading versions…');
+  resetSels();
 
-  state.selectedRepo = repoName;
-  state.selectedFromVersion = null;
-  state.diffData = null;
-
-  document.getElementById('compareBtn').style.display = 'none';
-  document.getElementById('diffHeader').style.display = 'none';
-  document.getElementById('tabBar').style.display = 'none';
-  document.getElementById('versionCountStatus').style.display = 'none';
-  document.getElementById('latestStatus').style.display = 'none';
-  document.getElementById('diffSummaryStatus').style.display = 'none';
-  showWelcome();
-  setStatus('loading versions...');
-  showVersionsLoading();
-
-  const res = await fetch(`/api/repos/${repoName}/versions`);
-  if (!res.ok) {
-    setStatus('error loading versions', 'red');
-    showVersionsError();
-    return;
-  }
-  const data = await res.json();
-  if (data.error) {
-    setStatus(data.error, 'red');
-    showVersionsError(data.error);
-    return;
-  }
-
-  state.versions = data.versions;
-  state.latestVersion = data.latest;
-
-  renderVersionsList();
-  updateStatusBar();
+  const d = await fetch(`/api/repos/${name}/versions`).then(r=>r.json());
+  if (d.error) { setStatus('error: ' + d.error); return; }
+  S.versions = d.versions || [];
+  S.latest = d.latest;
+  fillSels();
   setStatus('ready');
-
-  // Update last checked
-  const repos = await (await fetch('/api/repos')).json();
-  const repo = repos.find(r => r.name === repoName);
-  if (repo && repo.last_checked) {
-    const d = new Date(repo.last_checked);
-    document.getElementById('lastChecked').textContent = `last sync: ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
-  }
 }
 
-function renderVersionsList(filter='') {
-  const list = document.getElementById('versionsList');
-  list.innerHTML = '';
-  const filtered = filter
-    ? state.versions.filter(v => v.version.toLowerCase().includes(filter.toLowerCase()))
-    : state.versions;
-
-  if (!filtered.length) {
-    list.innerHTML = '<div class="sidebar-empty">No versions found.</div>';
-    return;
-  }
-
-  filtered.forEach(v => {
-    const div = document.createElement('div');
-    div.className = 'version-item' + (v.version === state.selectedFromVersion ? ' active' : '');
-    div.onclick = () => selectVersion(v.version);
-
-    let badges = '';
-    if (v.version === state.latestVersion) {
-      badges += '<span class="latest-badge">latest</span>';
-    }
-    if (v.has_breaking_changes) {
-      badges += '<span class="breaking-badge">⚠️ brk</span>';
-    }
-
-    div.innerHTML = `
-      <span class="version-tag">${escHtml(v.version)}</span>
-      ${badges}
-      <span class="version-date">${v.release_date || ''}</span>
-    `;
-    list.appendChild(div);
+function fillSels() {
+  const f = document.getElementById('fromSel');
+  const t = document.getElementById('toSel');
+  f.innerHTML = '<option value="">— current version —</option>';
+  t.innerHTML = '<option value="">— target version —</option>';
+  S.versions.forEach(v => {
+    const isLatest = v.version === S.latest;
+    const label = (isLatest ? v.version + ' (latest)' : v.version) + (v.has_breaking_changes ? ' ⚠' : '');
+    [f,t].forEach(sel => {
+      const o = document.createElement('option');
+      o.value = v.version; o.textContent = label;
+      sel.appendChild(o);
+    });
   });
+  if (S.latest) t.value = S.latest;
+  f.disabled = false; t.disabled = false;
+  checkReady();
 }
 
-function selectVersion(version) {
-  state.selectedFromVersion = version;
-  renderVersionsList(document.getElementById('versionSearch').value);
-  document.getElementById('compareBtn').style.display = 'flex';
-  setStatus(`selected: ${version} → ${state.latestVersion}`);
+function resetSels() {
+  ['fromSel','toSel'].forEach(id => {
+    const el = document.getElementById(id);
+    el.innerHTML = `<option value="">${id==='fromSel'?'— current version —':'— target version —'}</option>`;
+    el.disabled = true;
+  });
+  document.getElementById('compareBtn').disabled = true;
 }
 
-function filterVersions() {
-  const q = document.getElementById('versionSearch').value;
-  renderVersionsList(q);
+function checkReady() {
+  const f = document.getElementById('fromSel').value;
+  const t = document.getElementById('toSel').value;
+  document.getElementById('compareBtn').disabled = !(f && t && f !== t);
 }
 
-// ── Sync ──────────────────────────────────────────────────────────────────────
-async function syncRepo() {
-  const repoName = document.getElementById('repoSelect').value;
-  if (!repoName) { toast('Select a repo first', 'error'); return; }
-  const btn = document.getElementById('syncBtn');
-  btn.classList.add('loading');
-  btn.innerHTML = '<div class="spinner"></div> Syncing...';
-  setStatus('syncing...');
-
-  const res = await fetch(`/api/repos/${repoName}/sync`, {method: 'POST'});
-  const data = await res.json();
-  btn.classList.remove('loading');
-  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync`;
-
-  if (data.ok) {
-    toast(data.message, 'success');
-    setStatus('ready');
-    await onRepoChange();
-  } else {
-    toast(data.message || 'Sync failed', 'error');
-    setStatus('sync error', 'red');
-  }
-}
-
-// ── Compare ───────────────────────────────────────────────────────────────────
 async function runCompare() {
-  if (!state.selectedFromVersion || !state.latestVersion) return;
-  if (state.selectedFromVersion === state.latestVersion) {
-    toast('Select a version different from latest', 'error'); return;
-  }
+  const from = document.getElementById('fromSel').value;
+  const to   = document.getElementById('toSel').value;
+  if (!from || !to || from === to) return;
 
   const btn = document.getElementById('compareBtn');
-  btn.classList.add('loading');
-  btn.innerHTML = '<div class="spinner"></div> Loading...';
-  setStatus('fetching chart files & building diff...');
+  btn.disabled = true; btn.textContent = '…';
+  setStatus('fetching chart files…');
   showLoading();
 
-  const url = `/api/repos/${state.selectedRepo}/diff?from=${encodeURIComponent(state.selectedFromVersion)}&to=${encodeURIComponent(state.latestVersion)}`;
-  const res = await fetch(url);
-  btn.classList.remove('loading');
-  btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg> Compare`;
+  const res = await fetch(`/api/repos/${S.repo}/diff?from=${enc(from)}&to=${enc(to)}`);
+  btn.disabled = false; btn.textContent = 'Compare';
+  checkReady();
 
   if (!res.ok) {
-    const err = await res.json();
-    toast(err.error || 'Compare failed', 'error');
-    setStatus('compare error', 'red');
-    showWelcome();
-    return;
+    const e = await res.json().catch(()=>({}));
+    toast(e.error || 'Compare failed', 'err');
+    setStatus('error'); showEmpty(); return;
   }
 
-  const data = await res.json();
-  state.diffData = data;
-
-  // Update header
-  document.getElementById('dhFrom').textContent = data.from_version;
-  document.getElementById('dhTo').textContent = data.to_version;
-  document.getElementById('diffHeader').style.display = 'flex';
-  document.getElementById('tabBar').style.display = 'flex';
-
-  const statsEl = document.getElementById('diffStats');
-  statsEl.innerHTML = `
-    <div class="stat-pill files">${data.changed_files} files changed</div>
-    <div class="stat-pill add">+${data.total_additions}</div>
-    <div class="stat-pill del">-${data.total_deletions}</div>
-  `;
-
-  const cfc = document.getElementById('changedFilesCount');
-  if (data.changed_files > 0) { cfc.textContent = data.changed_files; cfc.style.display = 'inline'; }
-
-  const hasBreaking = data.versions_between && data.versions_between.some(v => v.has_breaking_changes);
-  document.getElementById('breakingTabBadge').style.display = hasBreaking ? 'inline' : 'none';
-
-  document.getElementById('diffSummaryStatus').style.display = 'flex';
-  document.getElementById('diffSummary').textContent = `${data.changed_files} files, +${data.total_additions}/-${data.total_deletions}`;
-  setStatus('diff ready');
-
-  switchTab('diff');
+  S.diffData = await res.json();
+  S.currentFile = null;
+  renderAll();
 }
 
-// ── Tab Switching ─────────────────────────────────────────────────────────────
-function switchTab(tab) {
-  state.currentTab = tab;
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['diff','release-notes','between'][i] === tab);
+function renderAll() {
+  const d = S.diffData;
+  const changed = d.diff.filter(f => f.status !== 'unchanged');
+  sv('sFiles','sFilesV', changed.length);
+  sv('sAdd','sAddV', '+' + d.total_additions);
+  sv('sDel','sDelV', '-' + d.total_deletions);
+
+  S.newKeys = computeNewKeys(d);
+  sv('sNew','sNewV', S.newKeys.length);
+
+  const brk = (d.versions_between||[]).filter(v=>v.has_breaking_changes).length;
+  if (brk) sv('sBrk','sBrkV', '⚠ ' + brk);
+
+  setStatus(`${d.from_version}  →  ${d.to_version}`);
+
+  const sorted = [...d.diff].sort((a,b)=>{
+    const o={modified:0,added:1,removed:2,unchanged:3};
+    return (o[a.status]||3)-(o[b.status]||3);
   });
-
-  if (!state.diffData) return;
-
-  if (tab === 'diff') renderDiffView();
-  else if (tab === 'release-notes') renderReleaseNotes();
-  else if (tab === 'between') renderBetweenVersions();
+  renderTabs(sorted);
+  const first = sorted.find(f=>f.status!=='unchanged') || sorted[0];
+  if (first) selectFile(first.filename);
 }
 
-// ── Diff View ─────────────────────────────────────────────────────────────────
-function renderDiffView() {
-  const content = document.getElementById('mainContent');
-  const diff = state.diffData.diff;
-
-  if (!diff || diff.length === 0) {
-    content.innerHTML = '<div class="loading-overlay">No diff data available.</div>';
-    return;
-  }
-
-  // Sort: changed files first, then unchanged
-  const sorted = [...diff].sort((a, b) => {
-    const order = {modified:0, added:1, removed:2, unchanged:3};
-    return (order[a.status]||3) - (order[b.status]||3);
+function renderTabs(files) {
+  const bar = document.getElementById('filetabs');
+  bar.innerHTML = ''; bar.style.display = 'flex';
+  files.forEach(f => {
+    const t = document.createElement('div');
+    t.className = 'ftab'; t.dataset.file = f.filename;
+    t.onclick = () => selectFile(f.filename);
+    t.innerHTML = `<span class="ftab-dot ${f.status}"></span>${escHtml(shortName(f.filename))}`;
+    bar.appendChild(t);
   });
-
-  const html = sorted.map(f => renderFileDiff(f)).join('');
-  content.innerHTML = `<div class="file-diffs">${html}</div>`;
 }
 
-function renderFileDiff(f) {
-  const isUnchanged = f.status === 'unchanged';
-  const diffHtml = f.diff && f.diff.length ? renderUnifiedDiff(f.diff) : '';
+function selectFile(filename) {
+  S.currentFile = filename;
+  document.querySelectorAll('.ftab').forEach(t =>
+    t.classList.toggle('active', t.dataset.file === filename)
+  );
+  const fd = S.diffData.diff.find(f => f.filename === filename);
+  if (fd) renderSBS(fd);
+}
 
-  return `
-    <div class="file-diff ${isUnchanged ? 'collapsed' : ''}">
-      <div class="file-diff-header" onclick="toggleFileDiff(this)">
-        <span class="file-status ${f.status}">${f.status}</span>
-        <span class="file-name">${escHtml(f.filename)}</span>
-        <span class="file-changes">
-          ${f.additions ? `<span class="file-add">+${f.additions}</span>` : ''}
-          ${f.deletions ? `<span class="file-del">-${f.deletions}</span>` : ''}
-        </span>
-        <span class="collapse-icon">▾</span>
+function renderSBS(fd) {
+  const ws = document.getElementById('workspace');
+  const { L, R } = splitDiff(fd);
+  const from = S.diffData.from_version;
+  const to   = S.diffData.to_version;
+  const lDel = L.filter(l=>l.t==='del').length;
+  const rAdd = R.filter(l=>l.t==='add').length;
+
+  ws.innerHTML = `
+    <div class="diff-pane" id="diffPane">
+      <div class="diff-side">
+        <div class="diff-side-header">
+          <span class="sv-label">from</span>
+          <span class="sv-ver old">${escHtml(from)}</span>
+          <span class="sv-changes" style="color:var(--red)">${lDel?'-'+lDel:''}</span>
+        </div>
+        <div class="diff-code" id="LC"><table class="ct"><tbody id="LB"></tbody></table></div>
       </div>
-      <div class="diff-body ${isUnchanged ? 'hidden' : ''}">
-        ${diffHtml || `<div style="padding:12px 16px;color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:12px;">No changes</div>`}
+      <div class="diff-side">
+        <div class="diff-side-header">
+          <span class="sv-label">to</span>
+          <span class="sv-ver new">${escHtml(to)}</span>
+          <span class="sv-changes" style="color:var(--green)">${rAdd?'+'+rAdd:''}</span>
+        </div>
+        <div class="diff-code" id="RC"><table class="ct"><tbody id="RB"></tbody></table></div>
       </div>
     </div>`;
+
+  fillTable('LB', L);
+  fillTable('RB', R);
+
+  // Sync scroll
+  const lc = document.getElementById('LC');
+  const rc = document.getElementById('RC');
+  let lock = false;
+  lc.addEventListener('scroll', () => { if(!lock){lock=true;rc.scrollTop=lc.scrollTop;lock=false;} });
+  rc.addEventListener('scroll', () => { if(!lock){lock=true;lc.scrollTop=rc.scrollTop;lock=false;} });
+
+  // Attach new values panel
+  document.getElementById('nvPanel')?.remove();
+  if (S.newKeys.length) attachNVPanel();
 }
 
-function renderUnifiedDiff(lines) {
-  if (!lines.length) return '';
-  let rows = '';
-  let lineNum = 0;
+function fillTable(id, lines) {
+  const tb = document.getElementById(id);
+  if (!tb) return;
+  tb.innerHTML = lines.map(l => {
+    const cls = l.t==='add'?'add':l.t==='del'?'del':l.t==='hunk'?'hunk':'ctx';
+    const ln = l.n !== null ? l.n : '';
+    const pfx = l.t==='add'?'+':l.t==='del'?'-':l.t==='hunk'?'':' ';
+    return `<tr class="${cls}"><td class="ln">${ln}</td><td class="code">${pfx} ${escHtml(l.tx)}</td></tr>`;
+  }).join('');
+}
+
+function splitDiff(fd) {
+  const lines = fd.diff || [];
+  const L = [], R = [];
+  if (fd.status==='added') {
+    lines.filter(l=>!l.startsWith('+++')&&!l.startsWith('---')&&!l.startsWith('@@'))
+         .forEach((l,i)=>R.push({t:'add',n:i+1,tx:l.slice(1)}));
+    return {L,R};
+  }
+  if (fd.status==='removed') {
+    lines.filter(l=>!l.startsWith('---')&&!l.startsWith('+++')&&!l.startsWith('@@'))
+         .forEach((l,i)=>L.push({t:'del',n:i+1,tx:l.slice(1)}));
+    return {L,R};
+  }
+  if (fd.status==='unchanged') {
+    lines.forEach((l,i)=>{L.push({t:'ctx',n:i+1,tx:l});R.push({t:'ctx',n:i+1,tx:l});});
+    return {L,R};
+  }
+  let ln=0, rn=0;
   lines.forEach(line => {
+    if (line.startsWith('---')||line.startsWith('+++')) return;
     if (line.startsWith('@@')) {
-      rows += `<tr class="hunk"><td class="ln">...</td><td class="code">${escHtml(line)}</td></tr>`;
-      const m = line.match(/@@ -\d+(?:,\d+)? \+(\d+)/);
-      if (m) lineNum = parseInt(m[1]) - 1;
-    } else if (line.startsWith('+') && !line.startsWith('+++')) {
-      lineNum++;
-      rows += `<tr class="add"><td class="ln">${lineNum}</td><td class="code">${escHtml(line)}</td></tr>`;
-    } else if (line.startsWith('-') && !line.startsWith('---')) {
-      rows += `<tr class="del"><td class="ln"></td><td class="code">${escHtml(line)}</td></tr>`;
-    } else if (!line.startsWith('---') && !line.startsWith('+++')) {
-      lineNum++;
-      rows += `<tr class="ctx"><td class="ln">${lineNum}</td><td class="code">${escHtml(line)}</td></tr>`;
+      const m=line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)/);
+      if(m){ln=parseInt(m[1])-1;rn=parseInt(m[2])-1;}
+      L.push({t:'hunk',n:null,tx:line}); R.push({t:'hunk',n:null,tx:line});
+      return;
+    }
+    if (line.startsWith('+')) { rn++; R.push({t:'add',n:rn,tx:line.slice(1)}); }
+    else if (line.startsWith('-')) { ln++; L.push({t:'del',n:ln,tx:line.slice(1)}); }
+    else { ln++;rn++; const tx=line.slice(1); L.push({t:'ctx',n:ln,tx}); R.push({t:'ctx',n:rn,tx}); }
+  });
+  return {L,R};
+}
+
+function computeNewKeys(d) {
+  const vf = d.diff.find(f=>f.filename==='values.yaml');
+  if (!vf || vf.status==='unchanged') return [];
+  const added   = (vf.diff||[]).filter(l=>l.startsWith('+')&&!l.startsWith('+++'));
+  const deleted = (vf.diff||[]).filter(l=>l.startsWith('-')&&!l.startsWith('---'));
+  const delKeys = new Set(deleted.map(l=>yamlKey(l.slice(1))).filter(Boolean));
+  const seen = new Set(), result = [];
+  added.forEach(line => {
+    const k = yamlKey(line.slice(1));
+    if (k && !delKeys.has(k) && !seen.has(k)) {
+      seen.add(k);
+      result.push({key:k, val:yamlVal(line.slice(1))});
     }
   });
-  return `<div class="diff-body"><table class="diff-table"><tbody>${rows}</tbody></table></div>`;
+  return result;
 }
 
-function toggleFileDiff(header) {
-  const card = header.parentElement;
-  const body = card.querySelector('.diff-body');
-  card.classList.toggle('collapsed');
-  body.classList.toggle('hidden');
-}
+function yamlKey(l) { const m=l.match(/^\s*([\w.\-]+)\s*:/); return m?m[1].trim():null; }
+function yamlVal(l) { const m=l.match(/^\s*[\w.\-]+\s*:\s*(.+)/); if(!m)return''; const v=m[1].trim(); return v.length>60?v.slice(0,57)+'…':v; }
 
-// ── Release Notes View ────────────────────────────────────────────────────────
-function renderReleaseNotes() {
-  const d = state.diffData;
-  if (!d) return;
-
-  const content = document.getElementById('mainContent');
-  let html = '<div class="release-notes-wrap">';
-
-  // Latest (to) version
-  html += buildReleaseCard(d.to_version, d.notes_to, d.breaking_in_to, true);
-  // From version
-  html += buildReleaseCard(d.from_version, d.notes_from, d.breaking_in_from, false);
-
-  html += '</div>';
-  content.innerHTML = html;
-}
-
-function buildReleaseCard(version, notes, hasBreaking, isLatest) {
-  const badge = isLatest
-    ? '<span class="latest-badge">latest</span>'
-    : '';
-  const breakingBadge = hasBreaking
-    ? '<span class="breaking-badge">⚠️ breaking</span>'
-    : '';
-
-  let body = '';
-  if (hasBreaking) {
-    const d = state.diffData;
-    const vData = d.versions_between && d.versions_between.find(v => v.version === version);
-    const summary = vData ? vData.breaking_changes_summary : '';
-    if (summary) {
-      body += `<div class="breaking-alert">
-        <div class="breaking-alert-title">⚠️ BREAKING CHANGES DETECTED</div>
-        <div class="breaking-alert-content">${escHtml(summary.substring(0, 800))}</div>
-      </div>`;
-    }
-  }
-
-  if (notes && notes.trim()) {
-    body += `<div class="release-notes-text">${escHtml(notes.substring(0, 3000))}${notes.length > 3000 ? '\n\n[truncated...]' : ''}</div>`;
-  } else {
-    body += `<div class="no-notes">No release notes available via GitHub API.<br>Check the GitHub releases page directly.</div>`;
-  }
-
-  return `<div class="release-card">
-    <div class="release-card-header">
-      <span class="release-card-version">${escHtml(version)}</span>
-      ${badge}${breakingBadge}
+function attachNVPanel() {
+  const panel = document.createElement('div');
+  panel.id = 'nvPanel'; panel.className = 'nv-panel';
+  panel.innerHTML = `
+    <div class="nv-header" onclick="toggleNV()">
+      <span class="nv-title">✦ New in values.yaml</span>
+      <span class="nv-badge">${S.newKeys.length} new keys</span>
+      <span class="nv-desc">Configs that didn't exist in the old version</span>
+      <svg id="nvChev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);margin-left:8px;transition:transform .2s"><path d="m6 9 6 6 6-6"/></svg>
     </div>
-    <div class="release-card-body">${body}</div>
-  </div>`;
-}
-
-// ── Between Versions ──────────────────────────────────────────────────────────
-function renderBetweenVersions() {
-  const d = state.diffData;
-  if (!d) return;
-
-  const content = document.getElementById('mainContent');
-  const versions = d.versions_between || [];
-
-  if (!versions.length) {
-    content.innerHTML = `<div class="loading-overlay" style="color:var(--text3)">No versions between ${escHtml(d.from_version)} and ${escHtml(d.to_version)}.</div>`;
-    return;
-  }
-
-  const breakingOnes = versions.filter(v => v.has_breaking_changes);
-  let html = '';
-
-  if (breakingOnes.length) {
-    html += `<div style="margin-bottom:16px;padding:12px 16px;background:rgba(245,165,36,0.07);border:1px solid rgba(245,165,36,0.2);border-radius:8px;">
-      <div style="font-size:12px;color:var(--yellow);font-family:'JetBrains Mono',monospace;margin-bottom:4px;">⚠️ ${breakingOnes.length} version(s) with breaking changes in this range</div>
-      <div style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace;">${breakingOnes.map(v => v.version).join(', ')}</div>
+    <div class="nv-body" id="nvBody">
+      ${S.newKeys.map(k=>`
+        <div class="nv-chip" title="${escHtml(k.key)}: ${escHtml(k.val)}">
+          <span class="nv-key">${escHtml(k.key)}</span>
+          ${k.val?`<span class="nv-val">${escHtml(k.val)}</span>`:''}
+        </div>`).join('')}
     </div>`;
-  }
-
-  html += '<div class="between-versions">';
-  versions.forEach(v => {
-    const breakingIcon = v.has_breaking_changes ? '⚠️ ' : '';
-    const notesPreview = v.release_notes ? v.release_notes.split('\n').slice(0, 2).join(' ').substring(0, 120) + '...' : 'No release notes cached.';
-    html += `<div class="between-version-row">
-      <div class="bv-version">${breakingIcon}${escHtml(v.version)}</div>
-      <div class="bv-notes">${escHtml(notesPreview)}</div>
-    </div>`;
-  });
-  html += '</div>';
-
-  content.innerHTML = html;
+  document.getElementById('workspace').appendChild(panel);
 }
 
-// ── UI Helpers ────────────────────────────────────────────────────────────────
-function showWelcome() {
-  document.getElementById('mainContent').innerHTML = `
-    <div class="welcome">
-      <div class="welcome-icon">⎈</div>
-      <h2>Helm Chart Diff Tool</h2>
-      <p>Compare any two versions of a Helm chart, see file diffs and check for breaking changes.</p>
-      <ul class="welcome-steps">
-        <li><div class="step-num">1</div>Select a repository from the dropdown above</li>
-        <li><div class="step-num">2</div>Click a version on the left to compare from</li>
-        <li><div class="step-num">3</div>Hit Compare — diffs against latest automatically</li>
-      </ul>
-    </div>`;
+function toggleNV() {
+  const b=document.getElementById('nvBody'), c=document.getElementById('nvChev');
+  const open=b.style.display!=='none';
+  b.style.display=open?'none':'flex';
+  c.style.transform=open?'rotate(-90deg)':'';
 }
 
-function showLoading() {
-  document.getElementById('mainContent').innerHTML = `
-    <div class="loading-overlay">
-      <div class="spinner" style="width:24px;height:24px;border-width:3px"></div>
-      <span>Fetching chart files and building diff...</span>
-      <span style="color:var(--text3);font-size:11px">This may take a moment on first load (downloading chart tarballs)</span>
-    </div>`;
+async function syncRepo() {
+  const name=document.getElementById('repoSel').value;
+  if(!name){toast('Select a chart first','err');return;}
+  setStatus('syncing…');
+  const d=await fetch(`/api/repos/${name}/sync`,{method:'POST'}).then(r=>r.json());
+  if(d.ok){toast(d.message,'ok');await onRepoChange();}
+  else{toast(d.message||'Sync failed','err');setStatus('error');}
 }
 
-function showVersionsLoading() {
-  document.getElementById('versionsList').innerHTML = `
-    <div class="sidebar-empty"><div class="spinner"></div><br>Loading versions...</div>`;
+function openModal(){document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===document.getElementById('modal'))closeModal();});
+async function submitModal(){
+  const payload={name:v('mName'),helm_repo_url:v('mUrl'),chart_name:v('mChart'),github_repo:v('mGh')};
+  if(!payload.name||!payload.helm_repo_url||!payload.chart_name||!payload.github_repo){toast('Fill all fields','err');return;}
+  const d=await fetch('/api/repos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}).then(r=>r.json());
+  if(d.ok){toast('Added '+payload.name,'ok');closeModal();location.reload();}
+  else toast(d.error||'Failed','err');
 }
 
-function showVersionsError(msg = 'Failed to load versions') {
-  document.getElementById('versionsList').innerHTML = `<div class="sidebar-empty" style="color:var(--red)">${escHtml(msg)}</div>`;
+function showEmpty(){
+  document.getElementById('workspace').innerHTML=`<div class="empty"><div class="empty-icon">⎈</div><h2>skewlog</h2><p>Before you upgrade, check the skew.</p><ul class="empty-steps"><li><div class="step-n">1</div>Choose a chart</li><li><div class="step-n">2</div>Set current version <span style="color:var(--red)">←</span></li><li><div class="step-n">3</div>Set target version <span style="color:var(--green)">→</span></li><li><div class="step-n">4</div>Hit Compare</li></ul></div>`;
+  document.getElementById('filetabs').style.display='none';
+  ['sFiles','sAdd','sDel','sNew','sBrk'].forEach(id=>document.getElementById(id).style.display='none');
 }
-
-function updateStatusBar() {
-  document.getElementById('versionCountStatus').style.display = 'flex';
-  document.getElementById('versionCount').textContent = state.versions.length;
-  document.getElementById('latestStatus').style.display = 'flex';
-  document.getElementById('latestVersion').textContent = state.latestVersion || 'unknown';
+function showLoading(){
+  document.getElementById('workspace').innerHTML=`<div class="loading-state"><div class="spin"></div><span>Downloading chart tarballs and building diff…</span><span style="color:var(--text3);font-size:11px">Cached after first load</span></div>`;
+  document.getElementById('filetabs').style.display='none';
 }
+function setStatus(m){document.getElementById('statusTxt').textContent=m;}
+function sv(sid,vid,val){const s=document.getElementById(sid);s.style.display='flex';document.getElementById(vid).textContent=val;}
+function enc(s){return encodeURIComponent(s);}
+function v(id){return document.getElementById(id).value.trim();}
+function shortName(p){const pts=p.split('/');return pts.length>2?'…/'+pts.slice(-2).join('/'):p;}
+function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show '+type;setTimeout(()=>el.className='',3200);}
 
-function setStatus(msg, type='') {
-  document.getElementById('statusText').textContent = msg;
-  const dot = document.getElementById('statusDot');
-  dot.className = 'status-dot';
-  if (type === 'red') dot.classList.add('red');
-  else if (type === 'yellow') dot.classList.add('yellow');
-  else dot.classList.add('green');
-}
-
-function toast(msg, type='') {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.className = 'show ' + (type || '');
-  setTimeout(() => { el.className = ''; }, 3500);
-}
-
-// ── Add Repo Modal ─────────────────────────────────────────────────────────────
-function openAddModal() {
-  document.getElementById('addModal').classList.add('open');
-}
-function closeAddModal() {
-  document.getElementById('addModal').classList.remove('open');
-}
-async function submitAddRepo() {
-  const name = document.getElementById('addName').value.trim();
-  const helmUrl = document.getElementById('addHelmUrl').value.trim();
-  const chartName = document.getElementById('addChartName').value.trim();
-  const githubRepo = document.getElementById('addGithubRepo').value.trim();
-
-  if (!name || !helmUrl || !chartName || !githubRepo) {
-    toast('Fill in all fields', 'error'); return;
-  }
-
-  const res = await fetch('/api/repos', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({name, helm_repo_url: helmUrl, chart_name: chartName, github_repo: githubRepo}),
-  });
-  const data = await res.json();
-  if (data.ok) {
-    toast(`Added ${name}`, 'success');
-    closeAddModal();
-    await loadRepos();
-  } else {
-    toast(data.error || 'Failed to add repo', 'error');
-  }
-}
-
-function escHtml(s) {
-  if (!s) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Close modal on overlay click
-document.getElementById('addModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('addModal')) closeAddModal();
-});
-
-init();
+boot();
 </script>
 </body>
 </html>
