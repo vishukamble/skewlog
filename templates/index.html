@@ -422,6 +422,25 @@ table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); fon
 const S = { repo:null, versions:[], latest:null, diffData:null, currentFile:null, newKeys:[] };
 
 // ── Boot ─────────────────────────────────────────────────────────────────
+async function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return { repo: p.get('repo') || '', from: p.get('from') || '', to: p.get('to') || '' };
+}
+
+function updateURL() {
+  const repo = document.getElementById('repoSel').value;
+  const from = document.getElementById('fromSel').value;
+  const to   = document.getElementById('toSel').value;
+  const p = new URLSearchParams();
+  if (repo) p.set('repo', repo);
+  if (from) p.set('from', from);
+  if (to)   p.set('to', to);
+  history.replaceState({}, '', '/diff' + (p.toString() ? '?' + p.toString() : ''));
+  // Keep Advisor nav link in sync
+  const advHref = '/advisor' + (p.toString() ? '?' + p.toString() : '');
+  document.querySelectorAll('a[href^="/advisor"]').forEach(a => a.href = advHref);
+}
+
 async function boot() {
   const repos = await fetch('/api/repos').then(r => r.json());
   const sel = document.getElementById('repoSel');
@@ -430,6 +449,18 @@ async function boot() {
     o.value = r.name; o.textContent = r.name;
     sel.appendChild(o);
   });
+  // Restore state from URL params
+  const { repo, from, to } = getParams();
+  if (repo) {
+    sel.value = repo;
+    await onRepoChange();
+    if (from) document.getElementById('fromSel').value = from;
+    if (to)   document.getElementById('toSel').value = to;
+    if (from && to) {
+      // fade hero out and run compare
+      handleCompareClick();
+    }
+  }
 }
 
 // ── Hero → App transition ─────────────────────────────────────────────────
@@ -519,6 +550,7 @@ function autoSetFrom(targetVersion) {
 }
 
 function onFromChange() {
+  updateURL();
   const val = document.getElementById('fromSel').value;
   if (val === '__manual__') {
     document.getElementById('fromManual').classList.add('open');
@@ -531,6 +563,7 @@ function onFromChange() {
 }
 
 function onToChange() {
+  updateURL();
   const val = document.getElementById('toSel').value;
   if (val === '__manual__') {
     document.getElementById('toManual').classList.add('open');

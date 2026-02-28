@@ -197,13 +197,38 @@ select:disabled{opacity:.35}
 <script>
 let R = null;
 
+function getParams() {
+  const p = new URLSearchParams(window.location.search);
+  return { repo: p.get('repo') || '', from: p.get('from') || '', to: p.get('to') || '' };
+}
+
+function updateURL() {
+  const repo = document.getElementById('repoSel').value;
+  const from = document.getElementById('fromSel').value;
+  const to   = document.getElementById('toSel').value;
+  const p = new URLSearchParams();
+  if (repo) p.set('repo', repo);
+  if (from) p.set('from', from);
+  if (to)   p.set('to', to);
+  history.replaceState({}, '', '/advisor' + (p.toString() ? '?' + p.toString() : ''));
+  // Keep nav Diff link in sync
+  const diffHref = '/diff' + (p.toString() ? '?' + p.toString() : '');
+  document.querySelectorAll('a.nav-link[href^="/diff"]').forEach(a => a.href = diffHref);
+}
+
 async function boot() {
   const repos = await fetch('/api/repos').then(r => r.json());
   const sel = document.getElementById('repoSel');
   repos.forEach(r => sel.appendChild(new Option(r.name, r.name)));
+  const { repo, from, to } = getParams();
+  if (repo) {
+    sel.value = repo;
+    await onRepoChange(from, to);
+    if (from && to) runAnalysis();
+  }
 }
 
-async function onRepoChange() {
+async function onRepoChange(preFrom, preTo) {
   const name = document.getElementById('repoSel').value;
   if (!name) return;
   const fromSel = document.getElementById('fromSel');
@@ -223,12 +248,22 @@ async function onRepoChange() {
     toSel.appendChild(new Option((isLatest ? v.version + ' (latest)' : v.version) + brk, v.version));
     if (!isLatest) fromSel.appendChild(new Option(v.version + brk, v.version));
   });
-  if (latest) {
-    toSel.value = latest;
+
+  // Restore from URL params, else default to latest/latest-1
+  if (preFrom && versions.find(v => v.version === preFrom)) {
+    fromSel.value = preFrom;
+  } else {
     const idx = versions.findIndex(v => v.version === latest);
     if (idx + 1 < versions.length) fromSel.value = versions[idx + 1].version;
   }
+  if (preTo && versions.find(v => v.version === preTo)) {
+    toSel.value = preTo;
+  } else if (latest) {
+    toSel.value = latest;
+  }
+
   fromSel.disabled = toSel.disabled = false;
+  updateURL();
   checkReady();
 }
 
@@ -236,9 +271,11 @@ function checkReady() {
   const f = document.getElementById('fromSel').value;
   const t = document.getElementById('toSel').value;
   document.getElementById('analyzeBtn').disabled = !(f && t && f !== t);
+  updateURL();
 }
 
 async function runAnalysis() {
+  updateURL();
   const repo = document.getElementById('repoSel').value;
   const from = document.getElementById('fromSel').value;
   const to   = document.getElementById('toSel').value;
