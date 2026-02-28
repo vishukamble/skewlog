@@ -1,5 +1,5 @@
 """
-Helm Chart Diff Tool
+SKEW Log
 Tracks SRE helm repos, compares versions, shows diffs and breaking changes.
 """
 
@@ -201,7 +201,10 @@ def fetch_helm_index(helm_repo_url):
     if not r:
         return None
     try:
-        return yaml.safe_load(r.text)
+        # Use r.content (bytes) and decode with errors='replace' to handle
+        # special characters that break yaml.safe_load on some repos (e.g. ingress-nginx)
+        content = r.content.decode('utf-8', errors='replace')
+        return yaml.safe_load(content)
     except Exception as e:
         logger.error(f"Failed to parse index.yaml from {url}: {e}")
         return None
@@ -304,7 +307,7 @@ def extract_chart_files(chart_url, chart_name):
 # ─── Sync Logic ──────────────────────────────────────────────────────────────
 
 def sync_repo(repo_name, conn=None):
-    """Fetch versions from helm index for a repo, store in DB."""
+    """Fetch versions from helm index for a repo, store only the latest 50."""
     close_conn = False
     if conn is None:
         conn = get_db_direct()
@@ -323,16 +326,21 @@ def sync_repo(repo_name, conn=None):
     if not entries:
         return False, f"Chart '{row['chart_name']}' not found in index"
 
-    versions_added = 0
-    latest_version = None
-    all_versions = []
-
+    # Build full version list first, then take only the latest 50
+    all_entries = {}
     for entry in entries:
         version = entry.get('version', '')
-        if not version:
-            continue
-        all_versions.append(version)
+        if version:
+            all_entries[version] = entry
 
+    sorted_versions = sort_versions(list(all_entries.keys()))
+    latest_version = sorted_versions[0] if sorted_versions else None
+    # Keep only the 50 most recent — no one diffs v0.1.0 against v9.0.0
+    versions_to_store = sorted_versions[:50]
+
+    versions_added = 0
+    for version in versions_to_store:
+        entry = all_entries[version]
         urls = entry.get('urls', [])
         chart_url = resolve_chart_url(row['helm_repo_url'], urls[0]) if urls else None
         created = entry.get('created', '')
@@ -354,10 +362,6 @@ def sync_repo(repo_name, conn=None):
             """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
             versions_added += 1
 
-    if all_versions:
-        sorted_v = sort_versions(all_versions)
-        latest_version = sorted_v[0] if sorted_v else None
-
     conn.execute("""
         UPDATE repos SET latest_version=?, last_checked=? WHERE name=?
     """, (latest_version, datetime.utcnow().isoformat(), repo_name))
@@ -366,7 +370,7 @@ def sync_repo(repo_name, conn=None):
     if close_conn:
         conn.close()
 
-    logger.info(f"Synced {repo_name}: {versions_added} new versions, latest={latest_version}")
+    logger.info(f"Synced {repo_name}: {versions_added} new versions stored (capped at 50), latest={latest_version}")
     return True, f"Synced: {versions_added} new versions. Latest: {latest_version}"
 
 def check_new_releases_today():
