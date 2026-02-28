@@ -49,12 +49,12 @@ select:hover{border-color:var(--border2)}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
 
 /* FILE TABS */
-.filetabs{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:0 20px;gap:2px;flex-shrink:0;overflow-x:auto;min-height:36px}
+.filetabs{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:flex-end;padding:6px 20px 0;gap:4px;flex-shrink:0;overflow-x:auto;min-height:42px}
 .filetabs::-webkit-scrollbar{height:3px}
 .filetabs::-webkit-scrollbar-thumb{background:var(--border2)}
-.ftab{padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);cursor:pointer;border-radius:5px 5px 0 0;border:1px solid transparent;border-bottom:none;white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:6px;position:relative;bottom:-1px}
-.ftab:hover{color:var(--text2);background:var(--s2)}
-.ftab.active{color:var(--text);background:var(--bg);border-color:var(--border);border-bottom-color:var(--bg)}
+.ftab{padding:7px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text2);cursor:pointer;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;white-space:nowrap;transition:all .12s;display:flex;align-items:center;gap:7px;position:relative;bottom:-1px;background:var(--s2)}
+.ftab:hover{color:var(--text);background:var(--s3);border-color:var(--border2)}
+.ftab.active{color:#fff;background:var(--s3);border-color:var(--border2);border-bottom-color:var(--s3)}
 .ftab-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 .ftab-dot.modified{background:var(--accent)}
 .ftab-dot.added{background:var(--green)}
@@ -68,9 +68,9 @@ select:hover{border-color:var(--border2)}
 .diff-pane{flex:1;display:grid;grid-template-columns:1fr 1fr;overflow:hidden;min-height:0}
 .diff-side{display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)}
 .diff-side:last-child{border-right:none}
-.diff-side-header{padding:8px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.diff-side-header{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:13px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .sv-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em}
-.sv-ver{font-weight:600;font-size:12px}
+.sv-ver{font-weight:700;font-size:14px}
 .sv-ver.old{color:var(--red)}
 .sv-ver.new{color:var(--green)}
 .sv-changes{margin-left:auto;font-size:11px}
@@ -78,19 +78,19 @@ select:hover{border-color:var(--border2)}
 .diff-code::-webkit-scrollbar{width:5px;height:5px}
 .diff-code::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
-table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.55}
+table.ct{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.6}
 .ct td{padding:1px 0;vertical-align:top;white-space:pre}
-.ct .ln{color:var(--text3);text-align:right;min-width:44px;padding-right:12px;padding-left:8px;user-select:none;border-right:1px solid var(--border)}
-.ct .code{padding-left:12px;padding-right:16px;color:var(--text2)}
+.ct .ln{color:var(--text2);text-align:right;min-width:52px;padding-right:12px;padding-left:8px;user-select:none;border-right:1px solid var(--border)}
+.ct .code{padding-left:14px;padding-right:16px;color:#c8cde0}
 .ct tr.add{background:var(--add-bg)}
 .ct tr.add .ln{color:var(--green);border-right-color:rgba(52,211,153,.2)}
-.ct tr.add .code{color:#6ee7b7}
+.ct tr.add .code{color:#86efcd}
 .ct tr.del{background:var(--del-bg)}
 .ct tr.del .ln{color:var(--red);border-right-color:rgba(248,113,113,.2)}
-.ct tr.del .code{color:#fca5a5}
+.ct tr.del .code{color:#fbb3b3}
 .ct tr.hunk .code{color:var(--accent);background:rgba(79,142,247,.05)}
 .ct tr.hunk .ln{color:var(--accent)}
-.ct tr.ctx .code{color:var(--text2)}
+.ct tr.ctx .code{color:#c8cde0}
 
 /* NEW VALUES PANEL */
 .nv-panel{border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;display:flex;flex-direction:column;max-height:200px}
