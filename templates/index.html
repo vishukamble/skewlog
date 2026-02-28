@@ -74,7 +74,7 @@ select:disabled { opacity: .4; }
   width: 250px; flex-direction: column; gap: 8px;
 }
 .manual-pop.open { display: flex; }
-.mp-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-family: var(--mono); }
+.mp-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; font-family: var(--mono); }
 .mp-row { display: flex; gap: 6px; }
 .mp-input {
   flex: 1; background: var(--surface2); border: 1px solid var(--border);
@@ -84,7 +84,7 @@ select:disabled { opacity: .4; }
 .mp-input:focus { border-color: var(--accent); }
 .mp-btn {
   padding: 7px 12px; border-radius: 6px; border: none;
-  background: var(--accent); color: #000; font-size: 13.2px;
+  background: var(--accent); color: #000; font-size: 12px;
   font-weight: 700; cursor: pointer; white-space: nowrap; transition: background .15s;
 }
 .mp-btn:hover { background: var(--accent-h); }
@@ -141,7 +141,7 @@ select:disabled { opacity: .4; }
   height: 34px; flex-shrink: 0;
   background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; padding: 0 20px; gap: 20px;
-  font-family: var(--mono); font-size: 13.2px; color: var(--text2);
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
 }
 .stat { display: flex; align-items: center; gap: 6px; }
 .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
@@ -166,12 +166,12 @@ select:disabled { opacity: .4; }
 .file-sidebar::-webkit-scrollbar { width: 4px; }
 .file-sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 .sidebar-label {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .07em;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
   color: var(--text3); font-family: var(--mono); padding: 4px 6px 8px;
 }
 .ftab {
   padding: 9px 12px; border-radius: 7px; cursor: pointer;
-  font-family: var(--mono); font-size: 13.2px; color: var(--text2);
+  font-family: var(--mono); font-size: 12px; color: var(--text2);
   margin-bottom: 3px; transition: all .12s;
   display: flex; align-items: center; gap: 8px;
   white-space: nowrap; overflow: hidden;
@@ -219,18 +219,18 @@ select:disabled { opacity: .4; }
   font-family: var(--mono); display: flex; align-items: center;
   gap: 10px; flex-shrink: 0;
 }
-.sv-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
+.sv-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; }
 .sv-ver { font-weight: 700; font-size: 14px; }
 .sv-ver.old { color: var(--red); }
 .sv-ver.new { color: var(--green); }
-.sv-chg { margin-left: auto; font-size: 13.2px; font-family: var(--mono); }
+.sv-chg { margin-left: auto; font-size: 12px; font-family: var(--mono); }
 .diff-code { flex: 1; overflow: auto; }
 .diff-code::-webkit-scrollbar { width: 5px; height: 5px; }
 .diff-code::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
 table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 13px; line-height: 1.6; }
 .ct td { padding: 1px 0; vertical-align: top; white-space: pre; }
-.ct .ln { color: var(--text3); text-align: right; min-width: 48px; padding-right: 12px; padding-left: 8px; user-select: none; border-right: 1px solid var(--border); font-size: 13.2px; }
+.ct .ln { color: var(--text3); text-align: right; min-width: 48px; padding-right: 12px; padding-left: 8px; user-select: none; border-right: 1px solid var(--border); font-size: 12px; }
 .ct .code { padding-left: 14px; padding-right: 16px; color: #c8cde0; }
 .ct tr.add { background: var(--add-bg); }
 .ct tr.add .ln { color: var(--green); border-right-color: rgba(74,222,128,.2); }
@@ -248,13 +248,13 @@ table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); fon
 .nv-panel { border-top: 1px solid var(--border); background: var(--surface); flex-shrink: 0; display: flex; flex-direction: column; max-height: 200px; }
 .nv-hdr { padding: 9px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; flex-shrink: 0; }
 .nv-title { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--green); text-transform: uppercase; letter-spacing: .07em; }
-.nv-badge { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.2); color: var(--green); font-family: var(--mono); font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+.nv-badge { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.2); color: var(--green); font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; }
 .nv-desc { font-size: 11px; color: var(--text3); margin-left: auto; }
 .nv-body { overflow-y: auto; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
 .nv-chip { background: var(--surface2); border: 1px solid rgba(74,222,128,.15); border-radius: 6px; padding: 7px 12px; font-family: var(--mono); font-size: 11px; display: flex; flex-direction: column; gap: 3px; max-width: 260px; transition: border-color .15s; }
 .nv-chip:hover { border-color: rgba(74,222,128,.4); }
 .nv-key { color: var(--green); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.nv-val { color: var(--text3); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nv-val { color: var(--text3); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── EMPTY / LOADING ── */
 .empty-diff { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text3); font-size: 14px; font-family: var(--mono); }
@@ -263,7 +263,7 @@ table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); fon
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── TOAST ── */
-#toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 13.2px; font-family: var(--mono); color: var(--text); box-shadow: 0 4px 24px rgba(0,0,0,.5); transform: translateY(60px); opacity: 0; transition: all .25s ease; z-index: 1000; }
+#toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 12px; font-family: var(--mono); color: var(--text); box-shadow: 0 4px 24px rgba(0,0,0,.5); transform: translateY(60px); opacity: 0; transition: all .25s ease; z-index: 1000; }
 #toast.show { transform: translateY(0); opacity: 1; }
 #toast.ok  { border-color: rgba(74,222,128,.4); color: var(--green); }
 #toast.err { border-color: rgba(248,113,113,.4); color: var(--red); }
@@ -275,7 +275,7 @@ table.ct { width: 100%; border-collapse: collapse; font-family: var(--mono); fon
 .overlay.open .modal { transform: scale(1); }
 .modal-title { font-family: var(--mono); font-size: 15px; font-weight: 600; margin-bottom: 20px; }
 .fg { margin-bottom: 14px; }
-.flabel { display: block; font-size: 11px; color: var(--text3); font-family: var(--mono); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
+.flabel { display: block; font-size: 10px; color: var(--text3); font-family: var(--mono); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
 .finput { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 7px; font-size: 13px; font-family: var(--mono); outline: none; transition: border-color .15s; }
 .finput:focus { border-color: var(--accent); }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
@@ -457,7 +457,26 @@ async function boot() {
     if (from) document.getElementById('fromSel').value = from;
     if (to)   document.getElementById('toSel').value = to;
     if (from && to) {
-      // fade hero out and run compare
+      // Check sessionStorage cache first — avoid re-fetching on back-navigation
+      const cacheKey = `diff:${repo}:${from}:${to}`;
+      try {
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          S.repo = repo;
+          S.diffData = JSON.parse(cached);
+          S.currentFile = null;
+          // Fade hero, show workspace with cached data
+          const hero = document.getElementById('heroSection');
+          const app  = document.getElementById('appWorkspace');
+          hero.classList.add('hidden');
+          app.classList.remove('hidden');
+          setStatus('');
+          renderAll();
+          updateURL();
+          return;
+        }
+      } catch(e) {}
+      // No cache — fetch fresh
       handleCompareClick();
     }
   }
@@ -655,6 +674,12 @@ async function runCompare() {
 
   S.diffData = await res.json();
   S.currentFile = null;
+  // Cache result in sessionStorage so back-navigation doesn't re-fetch
+  try {
+    const cacheKey = `diff:${S.repo}:${from}:${to}`;
+    sessionStorage.setItem(cacheKey, JSON.stringify(S.diffData));
+    sessionStorage.setItem('diff:last', cacheKey);
+  } catch(e) {}
   renderAll();
 }
 

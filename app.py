@@ -22,6 +22,17 @@ from packaging.version import Version, InvalidVersion
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
+# Per-version download locks — prevents concurrent requests from downloading the same tarball
+_fetch_locks: dict = {}
+_fetch_locks_mutex = threading.Lock()
+
+def _get_fetch_lock(repo_name, version):
+    key = f"{repo_name}@{version}"
+    with _fetch_locks_mutex:
+        if key not in _fetch_locks:
+            _fetch_locks[key] = threading.Lock()
+        return _fetch_locks[key]
+
 app = Flask(__name__)
 DATABASE = os.path.join(os.path.dirname(__file__), 'helm_tracker.db')
 
@@ -438,36 +449,46 @@ def build_diff(files_a, files_b, version_a, version_b):
     return result
 
 def ensure_chart_files_cached(repo_name, version, conn):
-    """Make sure chart files are in DB; download if not."""
-    row = conn.execute("SELECT name, helm_repo_url, chart_name, github_repo FROM repos WHERE name=?", (repo_name,)).fetchone()
-    ver_row = conn.execute(
-        "SELECT chart_url FROM chart_versions WHERE repo_name=? AND version=?",
-        (repo_name, version)
-    ).fetchone()
-    if not ver_row:
-        return {}
-
+    """Make sure chart files are in DB; download if not. Thread-safe: only one download per version at a time."""
+    # Fast path — already cached, no lock needed
     existing = conn.execute(
         "SELECT filename, content FROM chart_files WHERE repo_name=? AND version=?",
         (repo_name, version)
     ).fetchall()
     if existing:
+        logger.info(f"Cache HIT for {repo_name}@{version} ({len(existing)} files)")
         return {r['filename']: r['content'] for r in existing}
 
-    # Download and cache
-    chart_url = ver_row['chart_url']
-    if not chart_url:
-        return {}
+    # Slow path — acquire per-version lock so concurrent requests don't all download
+    lock = _get_fetch_lock(repo_name, version)
+    with lock:
+        # Re-check after acquiring lock (another thread may have just downloaded it)
+        existing = conn.execute(
+            "SELECT filename, content FROM chart_files WHERE repo_name=? AND version=?",
+            (repo_name, version)
+        ).fetchall()
+        if existing:
+            logger.info(f"Cache HIT (after lock) for {repo_name}@{version} ({len(existing)} files)")
+            return {r['filename']: r['content'] for r in existing}
 
-    files = extract_chart_files(chart_url, row['chart_name'])
-    for fname, content in files.items():
-        conn.execute("""
-            INSERT OR IGNORE INTO chart_files (repo_name, version, filename, content)
-            VALUES (?, ?, ?, ?)
-        """, (repo_name, version, fname, content))
-    conn.commit()
-    logger.info(f"Cached {len(files)} files for {repo_name}@{version}")
-    return files
+        row = conn.execute("SELECT name, helm_repo_url, chart_name, github_repo FROM repos WHERE name=?", (repo_name,)).fetchone()
+        ver_row = conn.execute(
+            "SELECT chart_url FROM chart_versions WHERE repo_name=? AND version=?",
+            (repo_name, version)
+        ).fetchone()
+        if not ver_row or not ver_row['chart_url']:
+            return {}
+
+        logger.info(f"Cache MISS — downloading {repo_name}@{version}")
+        files = extract_chart_files(ver_row['chart_url'], row['chart_name'])
+        for fname, content in files.items():
+            conn.execute("""
+                INSERT OR IGNORE INTO chart_files (repo_name, version, filename, content)
+                VALUES (?, ?, ?, ?)
+            """, (repo_name, version, fname, content))
+        conn.commit()
+        logger.info(f"Cached {len(files)} files for {repo_name}@{version}")
+        return files
 
 def ensure_release_notes(repo_name, version, conn):
     """Fetch and cache release notes + breaking changes detection."""
