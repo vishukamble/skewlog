@@ -26,12 +26,14 @@ logger = logging.getLogger(__name__)
 _fetch_locks: dict = {}
 _fetch_locks_mutex = threading.Lock()
 
+
 def _get_fetch_lock(repo_name, version):
     key = f"{repo_name}@{version}"
     with _fetch_locks_mutex:
         if key not in _fetch_locks:
             _fetch_locks[key] = threading.Lock()
         return _fetch_locks[key]
+
 
 app = Flask(__name__)
 DATABASE = os.path.join(os.path.dirname(__file__), 'helm_tracker.db')
@@ -121,6 +123,7 @@ DEFAULT_REPOS = [
     },
 ]
 
+
 # ─── Database ────────────────────────────────────────────────────────────────
 
 def get_db():
@@ -129,11 +132,13 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
+
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop('db', None)
     if db:
         db.close()
+
 
 def get_db_direct():
     """Get DB connection outside of request context."""
@@ -141,50 +146,116 @@ def get_db_direct():
     conn.row_factory = sqlite3.Row
     return conn
 
+
 def init_db():
     conn = get_db_direct()
     conn.executescript("""
-        CREATE TABLE IF NOT EXISTS repos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT UNIQUE NOT NULL,
-            helm_repo_url TEXT NOT NULL,
-            chart_name TEXT NOT NULL,
-            github_repo TEXT NOT NULL,
-            latest_version TEXT,
-            last_checked TEXT
-        );
+                       CREATE TABLE IF NOT EXISTS repos
+                       (
+                           id
+                           INTEGER
+                           PRIMARY
+                           KEY
+                           AUTOINCREMENT,
+                           name
+                           TEXT
+                           UNIQUE
+                           NOT
+                           NULL,
+                           helm_repo_url
+                           TEXT
+                           NOT
+                           NULL,
+                           chart_name
+                           TEXT
+                           NOT
+                           NULL,
+                           github_repo
+                           TEXT
+                           NOT
+                           NULL,
+                           latest_version
+                           TEXT,
+                           last_checked
+                           TEXT
+                       );
 
-        CREATE TABLE IF NOT EXISTS chart_versions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            repo_name TEXT NOT NULL,
-            version TEXT NOT NULL,
-            chart_url TEXT,
-            release_date TEXT,
-            release_notes TEXT,
-            has_breaking_changes INTEGER DEFAULT 0,
-            breaking_changes_summary TEXT,
-            fetched_at TEXT,
-            UNIQUE(repo_name, version)
-        );
+                       CREATE TABLE IF NOT EXISTS chart_versions
+                       (
+                           id
+                           INTEGER
+                           PRIMARY
+                           KEY
+                           AUTOINCREMENT,
+                           repo_name
+                           TEXT
+                           NOT
+                           NULL,
+                           version
+                           TEXT
+                           NOT
+                           NULL,
+                           chart_url
+                           TEXT,
+                           release_date
+                           TEXT,
+                           release_notes
+                           TEXT,
+                           has_breaking_changes
+                           INTEGER
+                           DEFAULT
+                           0,
+                           breaking_changes_summary
+                           TEXT,
+                           fetched_at
+                           TEXT,
+                           UNIQUE
+                       (
+                           repo_name,
+                           version
+                       )
+                           );
 
-        CREATE TABLE IF NOT EXISTS chart_files (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            repo_name TEXT NOT NULL,
-            version TEXT NOT NULL,
-            filename TEXT NOT NULL,
-            content TEXT,
-            UNIQUE(repo_name, version, filename)
-        );
-    """)
+                       CREATE TABLE IF NOT EXISTS chart_files
+                       (
+                           id
+                           INTEGER
+                           PRIMARY
+                           KEY
+                           AUTOINCREMENT,
+                           repo_name
+                           TEXT
+                           NOT
+                           NULL,
+                           version
+                           TEXT
+                           NOT
+                           NULL,
+                           filename
+                           TEXT
+                           NOT
+                           NULL,
+                           content
+                           TEXT,
+                           UNIQUE
+                       (
+                           repo_name,
+                           version,
+                           filename
+                       )
+                           );
+                       """)
     # Seed default repos
     for repo in DEFAULT_REPOS:
         conn.execute("""
-            INSERT OR IGNORE INTO repos (name, helm_repo_url, chart_name, github_repo)
+                     INSERT
+                     OR IGNORE INTO repos (name, helm_repo_url, chart_name, github_repo)
             VALUES (?, ?, ?, ?)
-        """, (repo['name'], repo['helm_repo_url'], repo['chart_name'], repo['github_repo']))
+                     """, (repo['name'], repo['helm_repo_url'], repo['chart_name'], repo['github_repo']))
     conn.commit()
     conn.close()
     logger.info("Database initialised.")
+
 
 # ─── HTTP Helpers ─────────────────────────────────────────────────────────────
 
@@ -194,6 +265,7 @@ def gh_headers():
         h['Authorization'] = f'Bearer {GITHUB_TOKEN}'
     return h
 
+
 def safe_get(url, timeout=30, **kwargs):
     try:
         r = requests.get(url, timeout=timeout, **kwargs)
@@ -202,6 +274,7 @@ def safe_get(url, timeout=30, **kwargs):
     except Exception as e:
         logger.warning(f"GET {url} failed: {e}")
         return None
+
 
 # ─── Helm Index Parsing ───────────────────────────────────────────────────────
 
@@ -220,20 +293,25 @@ def fetch_helm_index(helm_repo_url):
         logger.error(f"Failed to parse index.yaml from {url}: {e}")
         return None
 
+
 def sort_versions(versions):
     """Sort semantic versions descending, best effort."""
+
     def key(v):
         try:
             return Version(v.lstrip('v'))
         except InvalidVersion:
             return Version('0.0.0')
+
     return sorted(versions, key=key, reverse=True)
+
 
 def resolve_chart_url(base_url, chart_url):
     """Resolve relative or absolute chart URLs."""
     if chart_url.startswith('http'):
         return chart_url
     return base_url.rstrip('/') + '/' + chart_url.lstrip('/')
+
 
 # ─── Release Notes ────────────────────────────────────────────────────────────
 
@@ -245,6 +323,7 @@ BREAKING_PATTERNS = [
 ]
 BREAKING_RE = re.compile('|'.join(BREAKING_PATTERNS), re.IGNORECASE)
 
+
 def detect_breaking_changes(text):
     """Return (has_breaking, summary_lines)."""
     if not text:
@@ -254,9 +333,10 @@ def detect_breaking_changes(text):
     for i, line in enumerate(lines):
         if BREAKING_RE.search(line):
             # grab context: current line + up to 3 after
-            context = lines[i:i+4]
+            context = lines[i:i + 4]
             hits.append('\n'.join(context).strip())
     return bool(hits), hits
+
 
 def fetch_github_release_notes(github_repo, version):
     """Try to get release notes from GitHub for a specific version tag."""
@@ -278,12 +358,14 @@ def fetch_github_release_notes(github_repo, version):
                 return rel.get('body', '')
     return ''
 
+
 # ─── Chart Download & Extraction ─────────────────────────────────────────────
 
 KEY_FILES = [
     'values.yaml', 'Chart.yaml', 'Chart.lock',
     'templates/NOTES.txt', 'README.md',
 ]
+
 
 def extract_chart_files(chart_url, chart_name):
     """Download chart tarball and extract key files. Returns dict {filename: content}."""
@@ -314,6 +396,7 @@ def extract_chart_files(chart_url, chart_name):
     except Exception as e:
         logger.error(f"Failed to extract chart from {chart_url}: {e}")
         return {}
+
 
 # ─── Sync Logic ──────────────────────────────────────────────────────────────
 
@@ -367,15 +450,19 @@ def sync_repo(repo_name, conn=None):
 
         if not existing:
             conn.execute("""
-                INSERT OR IGNORE INTO chart_versions
+                         INSERT
+                         OR IGNORE INTO chart_versions
                   (repo_name, version, chart_url, release_date, fetched_at)
                 VALUES (?, ?, ?, ?, ?)
-            """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
+                         """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
             versions_added += 1
 
     conn.execute("""
-        UPDATE repos SET latest_version=?, last_checked=? WHERE name=?
-    """, (latest_version, datetime.utcnow().isoformat(), repo_name))
+                 UPDATE repos
+                 SET latest_version=?,
+                     last_checked=?
+                 WHERE name = ?
+                 """, (latest_version, datetime.utcnow().isoformat(), repo_name))
     conn.commit()
 
     if close_conn:
@@ -383,6 +470,7 @@ def sync_repo(repo_name, conn=None):
 
     logger.info(f"Synced {repo_name}: {versions_added} new versions stored (capped at 50), latest={latest_version}")
     return True, f"Synced: {versions_added} new versions. Latest: {latest_version}"
+
 
 def check_new_releases_today():
     """Daily job: check if any new release was published today."""
@@ -401,6 +489,7 @@ def check_new_releases_today():
             logger.info(f"🆕 New release today: {r['name']} {row['version']}")
     conn.close()
 
+
 def background_scheduler():
     """Run daily release check every 24 hours."""
     while True:
@@ -409,6 +498,7 @@ def background_scheduler():
         except Exception as e:
             logger.error(f"Scheduler error: {e}")
         time.sleep(86400)  # 24 hours
+
 
 # ─── Diff Engine ─────────────────────────────────────────────────────────────
 
@@ -448,6 +538,7 @@ def build_diff(files_a, files_b, version_a, version_b):
         })
     return result
 
+
 def ensure_chart_files_cached(repo_name, version, conn):
     """Make sure chart files are in DB; download if not. Thread-safe: only one download per version at a time."""
     # Fast path — already cached, no lock needed
@@ -471,7 +562,8 @@ def ensure_chart_files_cached(repo_name, version, conn):
             logger.info(f"Cache HIT (after lock) for {repo_name}@{version} ({len(existing)} files)")
             return {r['filename']: r['content'] for r in existing}
 
-        row = conn.execute("SELECT name, helm_repo_url, chart_name, github_repo FROM repos WHERE name=?", (repo_name,)).fetchone()
+        row = conn.execute("SELECT name, helm_repo_url, chart_name, github_repo FROM repos WHERE name=?",
+                           (repo_name,)).fetchone()
         ver_row = conn.execute(
             "SELECT chart_url FROM chart_versions WHERE repo_name=? AND version=?",
             (repo_name, version)
@@ -483,12 +575,14 @@ def ensure_chart_files_cached(repo_name, version, conn):
         files = extract_chart_files(ver_row['chart_url'], row['chart_name'])
         for fname, content in files.items():
             conn.execute("""
-                INSERT OR IGNORE INTO chart_files (repo_name, version, filename, content)
+                         INSERT
+                         OR IGNORE INTO chart_files (repo_name, version, filename, content)
                 VALUES (?, ?, ?, ?)
-            """, (repo_name, version, fname, content))
+                         """, (repo_name, version, fname, content))
         conn.commit()
         logger.info(f"Cached {len(files)} files for {repo_name}@{version}")
         return files
+
 
 def ensure_release_notes(repo_name, version, conn):
     """Fetch and cache release notes + breaking changes detection."""
@@ -507,12 +601,16 @@ def ensure_release_notes(repo_name, version, conn):
     has_breaking, breaking_summary = detect_breaking_changes(notes)
 
     conn.execute("""
-        UPDATE chart_versions
-        SET release_notes=?, has_breaking_changes=?, breaking_changes_summary=?
-        WHERE repo_name=? AND version=?
-    """, (notes, int(has_breaking), '\n---\n'.join(breaking_summary), repo_name, version))
+                 UPDATE chart_versions
+                 SET release_notes=?,
+                     has_breaking_changes=?,
+                     breaking_changes_summary=?
+                 WHERE repo_name = ?
+                   AND version = ?
+                 """, (notes, int(has_breaking), '\n---\n'.join(breaking_summary), repo_name, version))
     conn.commit()
     return notes, has_breaking
+
 
 # ─── API Routes ──────────────────────────────────────────────────────────────
 
@@ -520,6 +618,7 @@ def ensure_release_notes(repo_name, version, conn):
 @app.route('/diff')
 def index():
     return render_template('index.html')
+
 
 @app.route('/api/repos')
 def api_repos():
@@ -537,6 +636,7 @@ def api_repos():
         })
     return jsonify(result)
 
+
 @app.route('/api/repos/<repo_name>/versions')
 def api_versions(repo_name):
     db = get_db()
@@ -550,10 +650,11 @@ def api_versions(repo_name):
             return jsonify({'error': msg}), 500
 
     rows = db.execute("""
-        SELECT version, release_date, has_breaking_changes, breaking_changes_summary
-        FROM chart_versions WHERE repo_name=?
-        ORDER BY rowid DESC
-    """, (repo_name,)).fetchall()
+                      SELECT version, release_date, has_breaking_changes, breaking_changes_summary
+                      FROM chart_versions
+                      WHERE repo_name = ?
+                      ORDER BY rowid DESC
+                      """, (repo_name,)).fetchall()
 
     versions = [dict(r) for r in rows]
 
@@ -563,12 +664,14 @@ def api_versions(repo_name):
             return Version(v['version'].lstrip('v'))
         except InvalidVersion:
             return Version('0.0.0')
+
     versions = sorted(versions, key=ver_key, reverse=True)
 
     repo_row = db.execute("SELECT latest_version FROM repos WHERE name=?", (repo_name,)).fetchone()
     latest = repo_row['latest_version'] if repo_row else None
 
     return jsonify({'versions': versions, 'latest': latest})
+
 
 @app.route('/api/repos/<repo_name>/diff')
 def api_diff(repo_name):
@@ -594,9 +697,10 @@ def api_diff(repo_name):
 
     # Get breaking changes from DB (all versions between a and b)
     ver_rows = db.execute("""
-        SELECT version, release_notes, has_breaking_changes, breaking_changes_summary
-        FROM chart_versions WHERE repo_name=?
-    """, (repo_name,)).fetchall()
+                          SELECT version, release_notes, has_breaking_changes, breaking_changes_summary
+                          FROM chart_versions
+                          WHERE repo_name = ?
+                          """, (repo_name,)).fetchall()
 
     all_versions_sorted = sort_versions([r['version'] for r in ver_rows])
     try:
@@ -607,9 +711,9 @@ def api_diff(repo_name):
 
     # Versions between b (newer) and a (older)
     if idx_b <= idx_a:
-        between = all_versions_sorted[idx_b:idx_a+1]
+        between = all_versions_sorted[idx_b:idx_a + 1]
     else:
-        between = all_versions_sorted[idx_a:idx_b+1]
+        between = all_versions_sorted[idx_a:idx_b + 1]
 
     between_versions = []
     for r in ver_rows:
@@ -640,11 +744,13 @@ def api_diff(repo_name):
         'versions_between': between_versions,
     })
 
+
 def ver_key_fn(v):
     try:
         return Version(v.lstrip('v'))
     except InvalidVersion:
         return Version('0.0.0')
+
 
 @app.route('/api/repos/<repo_name>/release-notes/<version>')
 def api_release_notes(repo_name, version):
@@ -661,11 +767,13 @@ def api_release_notes(repo_name, version):
         'breaking_changes_summary': ver_row['breaking_changes_summary'] if ver_row else '',
     })
 
+
 @app.route('/api/repos/<repo_name>/sync', methods=['POST'])
 def api_sync_repo(repo_name):
     ok, msg = sync_repo(repo_name)
     status = 200 if ok else 500
     return jsonify({'ok': ok, 'message': msg}), status
+
 
 @app.route('/api/repos/sync-all', methods=['POST'])
 def api_sync_all():
@@ -677,6 +785,7 @@ def api_sync_all():
         results[r['name']] = msg
     return jsonify(results)
 
+
 @app.route('/api/repos', methods=['POST'])
 def api_add_repo():
     data = request.json
@@ -687,9 +796,9 @@ def api_add_repo():
     db = get_db()
     try:
         db.execute("""
-            INSERT INTO repos (name, helm_repo_url, chart_name, github_repo)
-            VALUES (?, ?, ?, ?)
-        """, (data['name'], data['helm_repo_url'], data['chart_name'], data['github_repo']))
+                   INSERT INTO repos (name, helm_repo_url, chart_name, github_repo)
+                   VALUES (?, ?, ?, ?)
+                   """, (data['name'], data['helm_repo_url'], data['chart_name'], data['github_repo']))
         db.commit()
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Repo already exists'}), 409
@@ -708,13 +817,14 @@ def api_fetch_version(repo_name):
     if not row:
         return jsonify({'error': 'Repo not found'}), 404
 
-    # Check if already in DB
-    existing = db.execute(
-        "SELECT version FROM chart_versions WHERE repo_name=? AND version=?",
-        (repo_name, version)
-    ).fetchone()
+    # Check for exact match, or with/without the 'v' prefix
+    clean_v = version.lstrip('v')
+    existing = db.execute("""
+        S"SELECT version FROM chart_versions WHERE repo_name=? AND (version = ? OR version = ? OR version = ?)""",
+                          (repo_name, version, clean_v, f"v{clean_v}")).fetchone()
+
     if existing:
-        return jsonify({'ok': True, 'version': version, 'cached': True})
+        return jsonify({'ok': True, 'version': existing['version'], 'cached': True})
 
     # Fetch the helm index and look for this specific version
     index = fetch_helm_index(row['helm_repo_url'])
@@ -741,10 +851,11 @@ def api_fetch_version(repo_name):
         release_date = str(created)[:10] if created else ''
 
     db.execute("""
-        INSERT OR IGNORE INTO chart_versions
+               INSERT
+               OR IGNORE INTO chart_versions
           (repo_name, version, chart_url, release_date, fetched_at)
         VALUES (?, ?, ?, ?, ?)
-    """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
+               """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
     db.commit()
 
     return jsonify({'ok': True, 'version': matched.get('version', version), 'cached': False})
@@ -811,16 +922,16 @@ def build_values_diff_report(from_flat, to_flat):
     Returns structured report with renamed, removed, added, changed.
     """
     from_keys = set(from_flat.keys())
-    to_keys   = set(to_flat.keys())
+    to_keys = set(to_flat.keys())
 
     removed_raw = from_keys - to_keys
-    added_raw   = to_keys - from_keys
-    common      = from_keys & to_keys
+    added_raw = to_keys - from_keys
+    common = from_keys & to_keys
 
-    renamed    = []  # key moved/restructured
-    removed    = []  # truly gone
-    added      = []  # truly new
-    changed    = []  # same key, different default
+    renamed = []  # key moved/restructured
+    removed = []  # truly gone
+    added = []  # truly new
+    changed = []  # same key, different default
 
     # Pass 1: find renames among removed keys
     rename_targets = set()  # added keys that are rename destinations
@@ -840,7 +951,7 @@ def build_values_diff_report(from_flat, to_flat):
                 'old_key': key,
                 'new_key': candidate['key'],
                 'old_default': str(from_flat[key]) if from_flat[key] is not None else 'null',
-                'new_default': str(to_flat.get(candidate['key'], '')) ,
+                'new_default': str(to_flat.get(candidate['key'], '')),
                 'confidence': 'medium',
                 'alternatives': candidate.get('alternatives', []),
             })
@@ -873,7 +984,7 @@ def build_values_diff_report(from_flat, to_flat):
     return {
         'renamed': renamed,
         'removed': removed,
-        'added':   added,
+        'added': added,
         'changed': changed,
     }
 
@@ -885,10 +996,10 @@ def advisor_page():
 
 @app.route('/api/advisor/analyze', methods=['POST'])
 def api_advisor_analyze():
-    data         = request.json or {}
-    repo_name    = data.get('repo', '').strip()
+    data = request.json or {}
+    repo_name = data.get('repo', '').strip()
     from_version = data.get('from', '').strip()
-    to_version   = data.get('to', '').strip()
+    to_version = data.get('to', '').strip()
 
     if not repo_name or not from_version or not to_version:
         return jsonify({'error': 'repo, from, and to are required'}), 400
@@ -905,7 +1016,7 @@ def api_advisor_analyze():
         return row['content'] if row else None
 
     from_content = get_values(from_version)
-    to_content   = get_values(to_version)
+    to_content = get_values(to_version)
 
     # Auto-fetch if not cached — advisor can pull chart files directly
     if not from_content:
@@ -918,9 +1029,11 @@ def api_advisor_analyze():
         to_content = get_values(to_version)
 
     if not from_content:
-        return jsonify({'error': f'values.yaml unavailable for {repo_name}@{from_version} — version may not exist in the helm index'}), 404
+        return jsonify({
+                           'error': f'values.yaml unavailable for {repo_name}@{from_version} — version may not exist in the helm index'}), 404
     if not to_content:
-        return jsonify({'error': f'values.yaml unavailable for {repo_name}@{to_version} — version may not exist in the helm index'}), 404
+        return jsonify({
+                           'error': f'values.yaml unavailable for {repo_name}@{to_version} — version may not exist in the helm index'}), 404
 
     try:
         from_parsed = yaml.safe_load(from_content) or {}
@@ -932,14 +1045,14 @@ def api_advisor_analyze():
         return jsonify({'error': f'Failed to parse to values.yaml: {e}'}), 500
 
     from_flat = flatten_yaml(from_parsed)
-    to_flat   = flatten_yaml(to_parsed)
-    report    = build_values_diff_report(from_flat, to_flat)
+    to_flat = flatten_yaml(to_parsed)
+    report = build_values_diff_report(from_flat, to_flat)
 
     report['from_version'] = from_version
-    report['to_version']   = to_version
-    report['repo']         = repo_name
+    report['to_version'] = to_version
+    report['repo'] = repo_name
     report['total_keys_from'] = len(from_flat)
-    report['total_keys_to']   = len(to_flat)
+    report['total_keys_to'] = len(to_flat)
 
     return jsonify(report)
 
@@ -951,16 +1064,24 @@ def start_background_scheduler():
     t.start()
     logger.info("Background scheduler started (runs every 24h).")
 
+
 if __name__ == '__main__':
     try:
         from packaging.version import Version, InvalidVersion
     except ImportError:
         logger.warning("packaging not installed; version sorting may be degraded.")
+
+
         class Version:
             def __init__(self, v): self.v = v
+
             def __lt__(self, o): return self.v < o.v
+
             def __gt__(self, o): return self.v > o.v
-        class InvalidVersion(Exception): pass
+
+
+        class InvalidVersion(Exception):
+            pass
 
     init_db()
     start_background_scheduler()
@@ -972,6 +1093,9 @@ else:
     except ImportError:
         class Version:
             def __init__(self, v): self.v = v
-        class InvalidVersion(Exception): pass
+
+
+        class InvalidVersion(Exception):
+            pass
     init_db()
     start_background_scheduler()
