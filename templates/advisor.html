@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script data-goatcounter="https://stats.skewlog.com/count"  async src="https://stats.skewlog.com/count.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d11'/%3E%3Ctext x='4' y='24' font-size='22' font-family='monospace' font-weight='bold' fill='%23ffb74d'%3E%E2%8E%88%3C/text%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>skewlog · advisor</title>
@@ -294,6 +295,22 @@ async function runAnalysis() {
   render();
 }
 
+// ADDED: New helper for advisor.html
+async function copyToClipboard(text, btn) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.innerHTML;
+        btn.innerHTML = '✓ Copied';
+        btn.style.color = 'var(--green)';
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.style.color = '';
+        }, 2000);
+    } catch (err) {
+        toast('Failed to copy', 'err');
+    }
+}
+
 function render() {
   const renamed = R.renamed || [], removed = R.removed || [], changed = R.changed || [], added = R.added || [];
 
@@ -301,70 +318,69 @@ function render() {
    ['sumRemoved','fbRemoved','badgeRemoved',removed.length],
    ['sumChanged','fbChanged','badgeChanged',changed.length],
    ['sumAdded',  'fbAdded',  'badgeAdded',  added.length]
-  ].forEach(([s,f,b,n]) => { document.getElementById(s).textContent=n; document.getElementById(f).textContent=n; document.getElementById(b).textContent=n; });
+  ].forEach(([s,f,b,n]) => {
+    document.getElementById(s).textContent=n;
+    document.getElementById(f).textContent=n;
+    document.getElementById(b).textContent=n;
+  });
 
-  // Renamed
+  // Renamed - Improved with copyable paths
   const rl = document.getElementById('renamedList');
   rl.innerHTML = renamed.length ? '' : '<div class="empty-sec">No renamed keys detected</div>';
   renamed.forEach(item => {
     const high = item.confidence === 'high';
-    const alts = item.alternatives?.length ? `<br>Other candidates: <span class="hl">${esc(item.alternatives.join(', '))}</span>` : '';
     rl.innerHTML += `<div class="item" data-key="${esc(item.old_key+' '+item.new_key)}">
       <div class="item-top">
-        <span class="badge ${high?'renamed':'maybe'}">${high?'⇄ Renamed':'~ Maybe renamed'}</span>
+        <span class="badge ${high?'renamed':'maybe'}">${high?'⇄ Renamed':'~ Maybe'}</span>
         <div class="item-keys">
           <div class="key-row"><span class="key-lbl">was</span><span class="key-v old">${esc(item.old_key)}</span></div>
-          <div class="key-row"><span class="key-lbl">now</span><span class="key-v new">${esc(item.new_key)}</span></div>
+          <div class="key-row">
+            <span class="key-lbl">now</span>
+            <span class="key-v new" style="cursor:pointer" onclick="copyToClipboard('${esc(item.new_key)}', this)" title="Click to copy key path">${esc(item.new_key)}</span>
+          </div>
         </div>
         <div class="item-defs">
-          <div class="def-pill"><span class="def-lbl">old default</span><span class="def-v old">${esc(t(item.old_default))}</span></div>
+          <div class="def-pill"><span class="def-lbl">old</span><span class="def-v old">${esc(t(item.old_default))}</span></div>
           <span class="arr">→</span>
-          <div class="def-pill"><span class="def-lbl">new default</span><span class="def-v new">${esc(t(item.new_default))}</span></div>
+          <div class="def-pill"><span class="def-lbl">new</span><span class="def-v new" style="cursor:pointer" onclick="copyToClipboard('${esc(item.new_default)}', this)" title="Click to copy value">${esc(t(item.new_default))}</span></div>
         </div>
       </div>
-      <div class="item-hint">Update your <span class="hl">values.yaml</span> to use the new key path.${alts}</div>
     </div>`;
   });
 
-  // Removed
-  const reml = document.getElementById('removedList');
-  reml.innerHTML = removed.length ? '' : '<div class="empty-sec">No removed keys</div>';
-  removed.forEach(item => {
-    reml.innerHTML += `<div class="item" data-key="${esc(item.key)}">
-      <div class="item-top">
-        <span class="badge removed">✕ Removed</span>
-        <div class="item-keys"><div class="key-row"><span class="key-v old">${esc(item.key)}</span></div></div>
-        <div class="item-defs"><div class="def-pill"><span class="def-lbl">was default</span><span class="def-v old">${esc(t(item.old_default))}</span></div></div>
-      </div>
-      <div class="item-hint">This key no longer exists in the upstream chart.</div>
-    </div>`;
-  });
-
-  // Changed defaults
+  // Changed Defaults - Optimized for quick value copying
   const cl = document.getElementById('changedList');
   cl.innerHTML = changed.length ? '' : '<div class="empty-sec">No default value changes</div>';
   changed.forEach(item => {
     cl.innerHTML += `<div class="item" data-key="${esc(item.key)}">
       <div class="item-top">
         <span class="badge changed">⇅ Default</span>
-        <div class="item-keys"><div class="key-row"><span class="key-v plain">${esc(item.key)}</span></div></div>
+        <div class="item-keys">
+            <div class="key-row"><span class="key-v plain" style="cursor:pointer" onclick="copyToClipboard('${esc(item.key)}', this)">${esc(item.key)}</span></div>
+        </div>
         <div class="item-defs">
           <div class="def-pill"><span class="def-lbl">old</span><span class="def-v old">${esc(t(item.old_default))}</span></div>
           <span class="arr">→</span>
-          <div class="def-pill"><span class="def-lbl">new</span><span class="def-v new">${esc(t(item.new_default))}</span></div>
+          <div class="def-pill">
+            <span class="def-lbl">new</span>
+            <span class="def-v new" style="cursor:pointer" onclick="copyToClipboard('${esc(item.new_default)}', this)" title="Click to copy new default value">${esc(t(item.new_default))}</span>
+          </div>
         </div>
       </div>
     </div>`;
   });
 
-  // New keys
+  // Added Keys
   const al = document.getElementById('addedList');
   al.innerHTML = '';
   if (!added.length) {
     document.querySelector('.nf-wrap').innerHTML = '<div class="empty-sec" style="border:none;border-radius:0;padding:20px 16px">No new keys added</div>';
   } else {
     added.forEach(item => {
-      al.innerHTML += `<tr data-key="${esc(item.key)}"><td class="nf-key">${esc(item.key)}</td><td class="nf-val">${esc(t(item.new_default))}</td></tr>`;
+      al.innerHTML += `<tr data-key="${esc(item.key)}">
+        <td class="nf-key" style="cursor:pointer" onclick="copyToClipboard('${esc(item.key)}', this)">${esc(item.key)}</td>
+        <td class="nf-val" style="cursor:pointer" onclick="copyToClipboard('${esc(item.new_default)}', this)">${esc(t(item.new_default))}</td>
+      </tr>`;
     });
   }
 

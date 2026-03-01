@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+  <script data-goatcounter="https://stats.skewlog.com/count" async src="https://stats.skewlog.com/count.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0d11'/%3E%3Ctext x='4' y='24' font-size='22' font-family='monospace' font-weight='bold' fill='%23ffb74d'%3E%E2%8E%88%3C/text%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>skewlog</title>
@@ -845,7 +846,7 @@ function renderSBS(fd) {
   dc.innerHTML = `
     <div class="diff-pane" id="diffPane">
       <div class="diff-side">
-        <div class="diff-side-hdr">
+        <div class="diff-side-hdr" style="position: sticky; top: 0; z-index: 10;">
           <span class="sv-lbl">from</span>
           <span class="sv-ver old">${escHtml(from)}</span>
           <span class="sv-chg" style="color:var(--red)">${lDel ? '-'+lDel : ''}</span>
@@ -853,7 +854,7 @@ function renderSBS(fd) {
         <div class="diff-code" id="LC"><table class="ct"><tbody id="LB"></tbody></table></div>
       </div>
       <div class="diff-side">
-        <div class="diff-side-hdr">
+        <div class="diff-side-hdr" style="position: sticky; top: 0; z-index: 10;">
           <span class="sv-lbl">to</span>
           <span class="sv-ver new">${escHtml(to)}</span>
           <span class="sv-chg" style="color:var(--green)">${rAdd ? '+'+rAdd : ''}</span>
@@ -868,22 +869,41 @@ function renderSBS(fd) {
   const lc = document.getElementById('LC');
   const rc = document.getElementById('RC');
   let lock = false;
-  lc.addEventListener('scroll', () => { if (!lock) { lock=true; rc.scrollTop=lc.scrollTop; rc.scrollLeft=lc.scrollLeft; lock=false; } });
-  rc.addEventListener('scroll', () => { if (!lock) { lock=true; lc.scrollTop=rc.scrollTop; lc.scrollLeft=rc.scrollLeft; lock=false; } });
+
+  // Synchronized scroll with high-performance RAF (Request Animation Frame)
+  const syncScroll = (source, target) => {
+    if (!lock) {
+      lock = true;
+      target.scrollTop = source.scrollTop;
+      target.scrollLeft = source.scrollLeft;
+      requestAnimationFrame(() => { lock = false; });
+    }
+  };
+
+  lc.addEventListener('scroll', () => syncScroll(lc, rc));
+  rc.addEventListener('scroll', () => syncScroll(rc, lc));
 
   document.getElementById('nvPanel')?.remove();
   if (S.newKeys.length) attachNVPanel();
 }
 
+// REPLACED: fillTable in index.html
 function fillTable(id, lines) {
   const tb = document.getElementById(id);
   if (!tb) return;
   tb.innerHTML = lines.map(l => {
-    if (l.t === 'pad') return `<tr class="pad"><td class="ln"></td><td class="code"></td></tr>`;
+    if (l.t === 'pad') return `<tr class="pad"><td class="ln"></td><td class="code"> </td></tr>`;
+
+    // Hunk headers act as visual anchors during scrolling
     const cls = l.t==='add'?'add':l.t==='del'?'del':l.t==='hunk'?'hunk':'ctx';
     const ln  = l.n !== null ? l.n : '';
     const pfx = l.t==='add'?'+':l.t==='del'?'-':l.t==='hunk'?'':' ';
-    return `<tr class="${cls}"><td class="ln">${ln}</td><td class="code">${pfx} ${escHtml(l.tx)}</td></tr>`;
+
+    return `
+      <tr class="${cls}">
+        <td class="ln">${ln}</td>
+        <td class="code" title="${cls === 'hunk' ? 'Section Header' : ''}">${pfx} ${escHtml(l.tx)}</td>
+      </tr>`;
   }).join('');
 }
 
