@@ -15,7 +15,7 @@ import time
 import difflib
 import requests
 import yaml
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from flask import Flask, jsonify, render_template, request, g
 from packaging.version import Version, InvalidVersion
 
@@ -32,7 +32,16 @@ def _get_fetch_lock(repo_name, version):
     with _fetch_locks_mutex:
         if key not in _fetch_locks:
             _fetch_locks[key] = threading.Lock()
-        return _fetch_locks[key]
+        lock = _fetch_locks[key]
+    return lock
+
+
+def _cleanup_fetch_locks():
+    """Remove locks that are no longer held to prevent unbounded growth."""
+    with _fetch_locks_mutex:
+        to_remove = [k for k, v in _fetch_locks.items() if not v.locked()]
+        for k in to_remove:
+            del _fetch_locks[k]
 
 
 app = Flask(__name__)
@@ -120,6 +129,125 @@ DEFAULT_REPOS = [
         "helm_repo_url": "https://istio-release.storage.googleapis.com/charts",
         "chart_name": "istiod",
         "github_repo": "istio/istio",
+    },
+    # ─── Observability & Monitoring ──────────────────────────────────────
+    {
+        "name": "jaeger",
+        "helm_repo_url": "https://jaegertracing.github.io/helm-charts",
+        "chart_name": "jaeger",
+        "github_repo": "jaegertracing/helm-charts",
+    },
+    {
+        "name": "thanos",
+        "helm_repo_url": "https://charts.bitnami.com/bitnami",
+        "chart_name": "thanos",
+        "github_repo": "thanos-io/thanos",
+    },
+    {
+        "name": "mimir",
+        "helm_repo_url": "https://grafana.github.io/helm-charts",
+        "chart_name": "mimir-distributed",
+        "github_repo": "grafana/mimir",
+    },
+    {
+        "name": "alloy",
+        "helm_repo_url": "https://grafana.github.io/helm-charts",
+        "chart_name": "alloy",
+        "github_repo": "grafana/alloy",
+    },
+    {
+        "name": "opentelemetry-collector",
+        "helm_repo_url": "https://open-telemetry.github.io/opentelemetry-helm-charts",
+        "chart_name": "opentelemetry-collector",
+        "github_repo": "open-telemetry/opentelemetry-helm-charts",
+    },
+    {
+        "name": "fluent-bit",
+        "helm_repo_url": "https://fluent.github.io/helm-charts",
+        "chart_name": "fluent-bit",
+        "github_repo": "fluent/helm-charts",
+    },
+    {
+        "name": "alertmanager",
+        "helm_repo_url": "https://prometheus-community.github.io/helm-charts",
+        "chart_name": "alertmanager",
+        "github_repo": "prometheus-community/helm-charts",
+    },
+    # ─── Security & Policy ───────────────────────────────────────────────
+    {
+        "name": "falco",
+        "helm_repo_url": "https://falcosecurity.github.io/charts",
+        "chart_name": "falco",
+        "github_repo": "falcosecurity/charts",
+    },
+    {
+        "name": "trivy-operator",
+        "helm_repo_url": "https://aquasecurity.github.io/helm-charts",
+        "chart_name": "trivy-operator",
+        "github_repo": "aquasecurity/trivy-operator",
+    },
+    {
+        "name": "kyverno",
+        "helm_repo_url": "https://kyverno.github.io/kyverno",
+        "chart_name": "kyverno",
+        "github_repo": "kyverno/kyverno",
+    },
+    # ─── Networking & Service Mesh ───────────────────────────────────────
+    {
+        "name": "cilium",
+        "helm_repo_url": "https://helm.cilium.io",
+        "chart_name": "cilium",
+        "github_repo": "cilium/cilium",
+    },
+    {
+        "name": "linkerd-control-plane",
+        "helm_repo_url": "https://helm.linkerd.io/edge",
+        "chart_name": "linkerd-control-plane",
+        "github_repo": "linkerd/linkerd2",
+    },
+    # ─── GitOps & CD ─────────────────────────────────────────────────────
+    {
+        "name": "argo-rollouts",
+        "helm_repo_url": "https://argoproj.github.io/argo-helm",
+        "chart_name": "argo-rollouts",
+        "github_repo": "argoproj/argo-helm",
+    },
+    {
+        "name": "flux2",
+        "helm_repo_url": "https://fluxcd-community.github.io/helm-charts",
+        "chart_name": "flux2",
+        "github_repo": "fluxcd-community/helm-charts",
+    },
+    # ─── Scaling & Infrastructure ────────────────────────────────────────
+    {
+        "name": "keda",
+        "helm_repo_url": "https://kedacore.github.io/charts",
+        "chart_name": "keda",
+        "github_repo": "kedacore/charts",
+    },
+    {
+        "name": "crossplane",
+        "helm_repo_url": "https://charts.crossplane.io/stable",
+        "chart_name": "crossplane",
+        "github_repo": "crossplane/crossplane",
+    },
+    {
+        "name": "harbor",
+        "helm_repo_url": "https://helm.goharbor.io",
+        "chart_name": "harbor",
+        "github_repo": "goharbor/harbor-helm",
+    },
+    {
+        "name": "vault",
+        "helm_repo_url": "https://helm.releases.hashicorp.com",
+        "chart_name": "vault",
+        "github_repo": "hashicorp/vault-helm",
+    },
+    {
+        "name": "consul",
+        "helm_repo_url": "https://helm.releases.hashicorp.com",
+        "chart_name": "consul",
+        "github_repo": "hashicorp/consul-k8s",
     },
 ]
 
@@ -383,8 +511,8 @@ def extract_chart_files(chart_url, chart_name):
                 if not rel_path:
                     continue
                 # Collect key files + all templates/
-                is_key = any(rel_path == kf or rel_path.startswith('templates/') for kf in KEY_FILES)
-                if is_key or rel_path in KEY_FILES:
+                is_key = rel_path in KEY_FILES or rel_path.startswith('templates/')
+                if is_key:
                     try:
                         f = tf.extractfile(member)
                         if f:
@@ -454,7 +582,7 @@ def sync_repo(repo_name, conn=None):
                          OR IGNORE INTO chart_versions
                   (repo_name, version, chart_url, release_date, fetched_at)
                 VALUES (?, ?, ?, ?, ?)
-                         """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
+                         """, (repo_name, version, chart_url, release_date, datetime.now(timezone.utc).isoformat()))
             versions_added += 1
 
     conn.execute("""
@@ -462,7 +590,7 @@ def sync_repo(repo_name, conn=None):
                  SET latest_version=?,
                      last_checked=?
                  WHERE name = ?
-                 """, (latest_version, datetime.utcnow().isoformat(), repo_name))
+                 """, (latest_version, datetime.now(timezone.utc).isoformat(), repo_name))
     conn.commit()
 
     if close_conn:
@@ -495,6 +623,7 @@ def background_scheduler():
     while True:
         try:
             check_new_releases_today()
+            _cleanup_fetch_locks()
         except Exception as e:
             logger.error(f"Scheduler error: {e}")
         time.sleep(86400)  # 24 hours
@@ -521,8 +650,8 @@ def build_diff(files_a, files_b, version_a, version_b):
         else:
             status = 'modified'
             diff = list(difflib.unified_diff(
-                content_a.splitlines(keepends=True),
-                content_b.splitlines(keepends=True),
+                content_a.splitlines(),
+                content_b.splitlines(),
                 fromfile=f"{fname} ({version_a})",
                 tofile=f"{fname} ({version_b})",
                 lineterm='',
@@ -819,9 +948,9 @@ def api_fetch_version(repo_name):
 
     # Check for exact match, or with/without the 'v' prefix
     clean_v = version.lstrip('v')
-    existing = db.execute("""
-        S"SELECT version FROM chart_versions WHERE repo_name=? AND (version = ? OR version = ? OR version = ?)""",
-                          (repo_name, version, clean_v, f"v{clean_v}")).fetchone()
+    existing = db.execute(
+        "SELECT version FROM chart_versions WHERE repo_name=? AND (version = ? OR version = ? OR version = ?)",
+        (repo_name, version, clean_v, f"v{clean_v}")).fetchone()
 
     if existing:
         return jsonify({'ok': True, 'version': existing['version'], 'cached': True})
@@ -855,7 +984,7 @@ def api_fetch_version(repo_name):
                OR IGNORE INTO chart_versions
           (repo_name, version, chart_url, release_date, fetched_at)
         VALUES (?, ?, ?, ?, ?)
-               """, (repo_name, version, chart_url, release_date, datetime.utcnow().isoformat()))
+               """, (repo_name, version, chart_url, release_date, datetime.now(timezone.utc).isoformat()))
     db.commit()
 
     return jsonify({'ok': True, 'version': matched.get('version', version), 'cached': False})
