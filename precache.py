@@ -77,8 +77,8 @@ def extract_chart_files(chart_url, chart_name):
                 rel = parts[1] if len(parts) > 1 else member.name
                 if not rel:
                     continue
-                is_key = any(rel == kf or rel.startswith('templates/') for kf in KEY_FILES)
-                if is_key or rel in KEY_FILES:
+                is_key = rel in KEY_FILES or rel.startswith('templates/')
+                if is_key:
                     try:
                         f = tf.extractfile(member)
                         if f:
