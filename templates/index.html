@@ -26,6 +26,7 @@
     <meta property="twitter:image" content="https://skewlog.com/static/logo.svg">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;600;800&display=swap"
           rel="stylesheet">
+
     <style>
         :root {
             --bg: #0b0d11;
@@ -1008,6 +1009,27 @@
         ::-webkit-scrollbar-thumb {
             background: var(--border2);
             border-radius: 3px;
+        }
+
+        /* ── MOBILE: landing/marketing content only ── */
+        @media (max-width: 768px) {
+            .topbar {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .hero {
+                padding: 0 20px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
