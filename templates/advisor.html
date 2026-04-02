@@ -171,6 +171,11 @@
             opacity: .35
         }
 
+        select option {
+            background: var(--s1);
+            color: var(--text);
+        }
+
         .analyze-btn {
             padding: 9px 22px;
             border-radius: 8px;
@@ -1167,7 +1172,7 @@
         const str = String(s ?? '');
         return str.length > n ? str.slice(0, n) + '…' : str;
     };
-    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     function toast(msg, type = '') {
         const el = document.getElementById('toast');

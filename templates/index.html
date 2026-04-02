@@ -135,6 +135,11 @@
             opacity: .4;
         }
 
+        select option {
+            background: var(--surface);
+            color: var(--text);
+        }
+
         .v-old option:first-child {
             color: var(--text3);
         }
@@ -1923,11 +1928,6 @@
         if (!m) return '';
         const vl = m[1].trim();
         return vl.length > 60 ? vl.slice(0, 57) + '…' : vl;
-    }
-
-    function shortName(p) {
-        const pts = p.split('/');
-        return pts.length > 2 ? '…/' + pts.slice(-2).join('/') : p;
     }
 
     function escHtml(s) {

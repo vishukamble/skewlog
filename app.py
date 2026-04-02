@@ -422,16 +422,17 @@ def fetch_helm_index(helm_repo_url):
         return None
 
 
+def ver_key_fn(v):
+    """Parse a version string for sorting, with fallback."""
+    try:
+        return Version(v.lstrip('v'))
+    except InvalidVersion:
+        return Version('0.0.0')
+
+
 def sort_versions(versions):
     """Sort semantic versions descending, best effort."""
-
-    def key(v):
-        try:
-            return Version(v.lstrip('v'))
-        except InvalidVersion:
-            return Version('0.0.0')
-
-    return sorted(versions, key=key, reverse=True)
+    return sorted(versions, key=ver_key_fn, reverse=True)
 
 
 def resolve_chart_url(base_url, chart_url):
@@ -571,18 +572,12 @@ def sync_repo(repo_name, conn=None):
         else:
             release_date = str(created)[:10] if created else ''
 
-        existing = conn.execute(
-            "SELECT id FROM chart_versions WHERE repo_name=? AND version=?",
-            (repo_name, version)
-        ).fetchone()
-
-        if not existing:
-            conn.execute("""
-                         INSERT
-                         OR IGNORE INTO chart_versions
-                  (repo_name, version, chart_url, release_date, fetched_at)
-                VALUES (?, ?, ?, ?, ?)
-                         """, (repo_name, version, chart_url, release_date, datetime.now(timezone.utc).isoformat()))
+        cursor = conn.execute("""
+                     INSERT OR IGNORE INTO chart_versions
+                     (repo_name, version, chart_url, release_date, fetched_at)
+                     VALUES (?, ?, ?, ?, ?)
+                     """, (repo_name, version, chart_url, release_date, datetime.now(timezone.utc).isoformat()))
+        if cursor.rowcount > 0:
             versions_added += 1
 
     conn.execute("""
@@ -786,15 +781,7 @@ def api_versions(repo_name):
                       """, (repo_name,)).fetchall()
 
     versions = [dict(r) for r in rows]
-
-    # Sort by semver
-    def ver_key(v):
-        try:
-            return Version(v['version'].lstrip('v'))
-        except InvalidVersion:
-            return Version('0.0.0')
-
-    versions = sorted(versions, key=ver_key, reverse=True)
+    versions = sorted(versions, key=lambda v: ver_key_fn(v['version']), reverse=True)
 
     repo_row = db.execute("SELECT latest_version FROM repos WHERE name=?", (repo_name,)).fetchone()
     latest = repo_row['latest_version'] if repo_row else None
@@ -872,13 +859,6 @@ def api_diff(repo_name):
         'breaking_in_to': breaking_b,
         'versions_between': between_versions,
     })
-
-
-def ver_key_fn(v):
-    try:
-        return Version(v.lstrip('v'))
-    except InvalidVersion:
-        return Version('0.0.0')
 
 
 @app.route('/api/repos/<repo_name>/release-notes/<version>')
@@ -1194,37 +1174,9 @@ def start_background_scheduler():
     logger.info("Background scheduler started (runs every 24h).")
 
 
+init_db()
+start_background_scheduler()
+
 if __name__ == '__main__':
-    try:
-        from packaging.version import Version, InvalidVersion
-    except ImportError:
-        logger.warning("packaging not installed; version sorting may be degraded.")
-
-
-        class Version:
-            def __init__(self, v): self.v = v
-
-            def __lt__(self, o): return self.v < o.v
-
-            def __gt__(self, o): return self.v > o.v
-
-
-        class InvalidVersion(Exception):
-            pass
-
-    init_db()
-    start_background_scheduler()
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-else:
-    try:
-        from packaging.version import Version, InvalidVersion
-    except ImportError:
-        class Version:
-            def __init__(self, v): self.v = v
-
-
-        class InvalidVersion(Exception):
-            pass
-    init_db()
-    start_background_scheduler()
